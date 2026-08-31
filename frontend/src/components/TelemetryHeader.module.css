@@ -1,0 +1,77 @@
+.header {
+  gap: 16px;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+}
+.wordmark span {
+  color: var(--color-blue);
+}
+
+.sessionLine {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.speedBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.speedValue {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+.speedUnit {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.socBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.socLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+.socLabel svg {
+  color: var(--color-blue);
+}
+.socReadout {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+.socBar {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.socFill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.5), var(--color-blue));
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease;
+}

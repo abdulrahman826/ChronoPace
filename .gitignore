@@ -1,0 +1,18 @@
+# Claude Code local/personal settings — not shared
+.claude/settings.local.json
+
+# Netlify CLI local site-linking state — machine-specific, not project source
+.netlify/
+
+# Python backend (not built yet, but ready for when it is)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# OS/editor junk
+.DS_Store
+Thumbs.db

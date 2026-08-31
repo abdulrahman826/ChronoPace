@@ -1,0 +1,86 @@
+/* ChronoPace design tokens — see context.md for where these values come from.
+   Status colors are semantic (pass/warn/fail) and must never be used decoratively. */
+:root {
+  --color-bg-base: #05070a;
+  --color-panel: rgba(12, 18, 28, 0.65);
+  --color-panel-elevated: rgba(16, 24, 36, 0.78);
+  --color-border: rgba(0, 229, 255, 0.20);
+  --color-border-strong: rgba(0, 229, 255, 0.45);
+
+  --color-text-primary: #f2f4f7;
+  --color-text-secondary: #8a94a6;
+  --color-text-muted: #5b6577;
+
+  --color-green: #00ff66;
+  --color-blue: #00e5ff;
+  --color-amber: #ffb000;
+  --color-red: #ff1e3c;
+
+  --font-display: 'Rajdhani', 'Barlow Condensed', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+
+  --radius-panel: 10px;
+  --radius-pill: 999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-display);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-base);
+  /* Vignette on top of a CSS carbon-fiber weave — no external texture image needed,
+     and nothing here depends on network access once fonts have loaded once. */
+  background-image:
+    radial-gradient(ellipse at center, rgba(10, 15, 25, 0.55) 0%, rgba(5, 5, 10, 0.92) 72%),
+    repeating-linear-gradient(45deg, #0d1117 0px, #0d1117 2px, #05070a 2px, #05070a 4px),
+    repeating-linear-gradient(-45deg, #0d1117 0px, #0d1117 2px, #05070a 2px, #05070a 4px);
+  background-attachment: fixed;
+}
+
+a {
+  color: var(--color-blue);
+}
+a:hover {
+  color: #6df0ff;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+p {
+  margin: 0;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Shared "icon + title" row used at the top of most panels. */
+.panelHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-blue);
+}
+.panelHeaderRow h3 {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}

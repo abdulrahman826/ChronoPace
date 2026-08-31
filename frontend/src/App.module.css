@@ -1,0 +1,55 @@
+.pageTitle {
+  text-align: center;
+  padding: 20px 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--color-text-primary);
+}
+.pageTitle span {
+  color: var(--color-blue);
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 20px;
+  padding: 24px;
+  align-items: start;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.rightColumn {
+  /* 100vh minus the dashboard's own padding minus the new title bar's
+     height (20px padding + 26px line-height, both sides), so the right
+     column still fills exactly down to the bottom of the viewport. */
+  height: calc(100vh - 44px - 66px);
+}
+
+.leftSubGrid {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+  .leftSubGrid {
+    grid-template-columns: 1fr;
+  }
+  .rightColumn {
+    height: auto;
+  }
+}

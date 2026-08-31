@@ -1,0 +1,78 @@
+.subtitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  margin-top: -8px;
+}
+.subtitle .num {
+  color: var(--color-text-primary);
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rowItem {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.topRow {
+  background: rgba(0, 229, 255, 0.06);
+  border-color: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.1);
+}
+
+.rank {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.topRow .rank {
+  color: var(--color-blue);
+  font-weight: 700;
+}
+
+.modeCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.modeName {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.extra {
+  font-size: 10.5px;
+  color: var(--color-green);
+}
+
+.metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 108px;
+}
+.metrics .num {
+  font-size: 12.5px;
+  color: var(--color-text-primary);
+}
+.sharpe {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}

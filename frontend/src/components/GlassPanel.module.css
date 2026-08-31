@@ -1,0 +1,17 @@
+.panel {
+  background: var(--color-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.elevated {
+  background: var(--color-panel-elevated);
+  border-color: var(--color-border-strong);
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.12);
+}

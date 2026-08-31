@@ -1,0 +1,15 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "frontend/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Single-page app: send any unknown path to index.html instead of a 404.
+# Not currently load-bearing (the dashboard has no client-side routes yet)
+# but harmless now and correct if routing is added later.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
