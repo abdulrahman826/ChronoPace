@@ -693,47 +693,59 @@ hand-typed, not computed.
 one `.module.css` file per component. No routing, no state management
 library; local `useState` only.
 
-**Layout** (`App.jsx`, redesigned 2026-09-02 — see the layout-redesign spec
-in `docs/superpowers/specs/`): `Header` → a 3-column main row → a 3-item
-lower info row → `FooterStrip`. The 3D viewport is now the visual anchor
-in the center, not tucked in a side column.
+**Layout** (`App.jsx`, redesigned 2026-09-02, then restructured again into
+the current 3-zone form — see the specs in `docs/superpowers/specs/` for
+the earlier pass): `Header` → a 3-column main row → a 2-item support row
+→ `FooterStrip`. The car is the visual anchor in the center column, not
+tucked in a side column.
 - **Header**: centered wordmark + "AI MOTORSPORT INTELLIGENCE" subtitle;
   top-right session/lap/car/race-time/LIVE cluster.
-- **Main row**: left column (`RivalEstimator` → `DecisionBanner` →
-  `MonteCarloPlanner`, stacked) — `Viewport3D` (center, larger) —
-  `CircuitMapPlaceholder` (right, honest empty placeholder, no real
-  Circuit Map logic yet).
-- **Lower row**: `EnergyStatus` (new) — `ComplianceProbe` (unchanged) —
-  `OpportunityTimelinePlaceholder` (honest placeholder, no Opportunity
-  Horizon data yet).
+- **Main row**: **left** column (`DecisionBanner` → `RivalEstimator`,
+  stacked — `RivalEstimator` takes whatever vertical room is left, since
+  it's the key differentiator) — **center** column (`RacingScene`, the
+  car hero, → `MonteCarloPlanner` beneath it) — **right** column
+  (`CircuitMapPlaceholder` → `OpportunityTimeline`).
+- **Support row**: `EnergyStatus` — `ComplianceProbe` (rendered
+  `compact`). Deliberately just these two, kept visually secondary to
+  the main row.
 - **Footer**: `FooterStrip` — track/weather/tyre flavor plus a `DATA
   MODE: SIMULATION / REPLAY` indicator, so the UI never implies it's
   receiving live FIA/team telemetry.
 
-`TelemetryHeader.jsx` (the old right-column header) is retired — its
-fields split between the new `Header` (session/lap/car) and `EnergyStatus`
-(speed, SoC, relabeled "Deployable").
+A **Decision Pipeline** panel (a static 5-stage "how ChronoPace reasons"
+strip) existed briefly between `DecisionBanner` and `RivalEstimator` in
+an intermediate pass and was removed — Stages 1-3 aren't built yet, so a
+pipeline visualization had nothing real to show, and the left column
+reads better with `RivalEstimator` getting that space instead.
+`TelemetryHeader.jsx` (the old right-column header, from before that) is
+similarly retired — its fields split between `Header` (session/lap/car)
+and `EnergyStatus` (speed, SoC, relabeled "Deployable").
 
 **Components, one-to-one with the backend concepts above**:
 | Component | Mirrors | What it shows |
 |---|---|---|
-| `DecisionBanner` | `ConfidenceGateResult` (§8) | The "EXECUTE: {mode}" / "OVERRIDE → {mode}" call (mode names through `MODE_LABELS`, §4), the 4 gate-pass pills, the CI-bound/t-stat/DCLI/rival-σ stats line. Has a working "Demo: toggle scenario" button that flips between a canned pass-case and a canned override-case — the only interactive element on the page right now. |
-| `ComplianceProbe` | `GateResult` (§5) | The FIA constant checks (MGU-K power, lap deployment, delta-SoC swing, overtake-bonus banking) as PASS/BREACH rows citing article numbers, plus a worked breach example. |
-| `MonteCarloPlanner` + `DistributionSparkline` | `PlannerResult` / `ModeProjection` (§7) | The 5-mode ranked table — laptime delta ± std, Sharpe ratio, per-mode sparkline, iteration count, mode names through `MODE_LABELS`. |
-| `RivalEstimator` + `PosteriorPlot` | `RivalSocEstimate` (§6) | The posterior density plot (mean/σ), terminal speed, clipping point, attack tendency, and the "modeled, not measured" disclaimer. |
+| `DecisionBanner` | `ConfidenceGateResult` (§8) | The "EXECUTE: {mode}" / "OVERRIDE → {mode}" call (mode names through `MODE_LABELS`, §4), a one-line "WHY" readout built from the same gate numbers, the 4 gate-pass pills, the CI-bound/t-stat/DCLI/rival-σ stats grid. Has a working "Demo: toggle scenario" button that flips between a canned pass-case and a canned override-case — the only interactive element on the page right now. |
+| `ComplianceProbe` | `GateResult` (§5) | The FIA constant checks (MGU-K power, lap deployment, delta-SoC swing, overtake-bonus banking) as PASS/BREACH rows citing article numbers, plus a worked breach example (hidden when rendered `compact`, e.g. in the support row). |
+| `MonteCarloPlanner` | `PlannerResult` / `ModeProjection` (§7) | The 5-mode ranked table as horizontal bars (mode name, bar, probability, laptime delta), plus a best-strategy/expected-gain/risk summary row — `risk` is a 3-bucket label derived from the real Sharpe field, not a new invented one. |
+| `RivalEstimator` + `PosteriorPlot` | `RivalSocEstimate` (§6) | A large headline mean±std readout, the posterior density plot, terminal speed, clipping point, attack tendency, a clipping-point/defending-capacity callout, and the "modeled, not measured" disclaimer. Sized to be a major module, not a compact card — see the layout note above. |
 | `EnergyStatus` | `TelemetryInput` (§5) | Deployable energy (= current SoC, relabeled), speed, current mode. Deliberately excludes "harvest rate" and "next window" — neither maps to real/spec'd data. |
-| `CircuitMapPlaceholder` / `OpportunityTimelinePlaceholder` | — (not built) | Honest empty placeholders sized for where the real components go later — no fake track data, no fake opportunity windows. |
+| `CircuitMapPlaceholder` | — (not built) | Honest empty placeholder sized for where the real Circuit Map goes later — no fake track/position data. Still a placeholder; nothing changed here since the redesign beyond re-theming. |
+| `OpportunityTimeline` | — (Opportunity Horizon not built) | No longer an empty placeholder — visualizes the one genuinely sequential mechanic already computed (the overtake bonus's bank-this-lap/spend-next-lap rule) as a 3-node timeline, using only real fields from `mockTelemetry.js` (lap number, gap, mode projections). Still not a real Opportunity Horizon visualization — that needs §9 built first. |
 | `FooterStrip` | — | Track/weather/tyre flavor (static demo values) plus the `DATA MODE` disclaimer. |
-| `Viewport3D` | — (no backend equivalent) | Renders the team's own GLB model (`frontend/public/models/vf26.glb`) on an auto-rotating turntable, lit by a controlled overhead spotlight plus fill lighting, standing on a dark stage with the cyan ring markers. Bottom-aligned to the floor by bounding-box math, not a hardcoded offset, so it's correct for any model swap. Presentation only — carries no data. |
-| `GlassPanel` / `Icons` | — | Shared card shell (dark glass, blurred backdrop, glowing cyan border) and the hand-drawn SVG icon set every panel uses. No emoji anywhere in the UI, by design. |
+| `RacingScene` (`components/RacingScene/`) | — (no backend equivalent) | The car (`frontend/public/models/vf26.glb`) as a stationary subject, slowly rotating in place, under studio lighting with a red rim light — no road, no travel animation, no track. Scale-normalized via a single `CAR_LENGTH` constant (`sceneConfig.js`) rather than a hardcoded model-specific number, so it's correct for any GLB swap. Presentation only — carries no data. |
+| `GlassPanel` / `Icons` | — | Shared card shell (dark glass, blurred backdrop, glowing red border) and the hand-drawn SVG icon set every panel uses. No emoji anywhere in the UI, by design. |
 
-**Visual identity**: Rajdhani (display type) + JetBrains Mono (numeric/
-technical readouts) via Google Fonts; a near-black background with a
-radial vignette over a subtle repeating "carbon fiber" weave; electric
-blue as the primary/energy accent, green/amber/red for pass/warn/fail
-status, dark glassmorphic cards throughout. This went through several
-redesign passes before landing here — this is the version the team
-settled on, not a first draft.
+**Visual identity**: Titillium Web (display type — headings, decisions)
++ Inter (body/label text) + JetBrains Mono (numeric/technical readouts)
+via Google Fonts; a near-black background with a radial vignette over a
+subtle repeating "carbon fiber" weave; motorsport red as the primary
+accent (borders, glows, the car's rim light), green/amber/red for
+pass/warn/fail status — red intentionally doing double duty as both the
+brand accent and the fail state, reinforcing rather than conflicting,
+same as the reference livery it's drawn from. Dark glassmorphic cards
+throughout. This went through several redesign passes, including a full
+palette change from an earlier cyan-accented version — this is the
+version the team settled on, not a first draft.
 
 **The one thing to actually understand about the data**: everything
 renders from `frontend/src/data/mockTelemetry.js`, a single static file.
@@ -896,18 +908,21 @@ requirements.txt                     numpy, pydantic, pytest, scipy (all pinned)
 --- frontend — actually built ---
 frontend/
   src/
-    App.jsx, App.module.css          Top-level layout (§12)
+    App.jsx, App.module.css          Top-level layout — 3-zone main row + support row (§12)
     components/
+      Header.jsx/.module.css
+      FooterStrip.jsx/.module.css
       DecisionBanner.jsx/.module.css
       ComplianceProbe.jsx/.module.css
-      MonteCarloPlanner.jsx/.module.css, DistributionSparkline.jsx
+      MonteCarloPlanner.jsx/.module.css
       RivalEstimator.jsx/.module.css, PosteriorPlot.jsx
-      TelemetryHeader.jsx/.module.css
-      Viewport3D.jsx/.module.css
+      CircuitMapPlaceholder.jsx/.module.css
+      OpportunityTimeline.jsx/.module.css
+      RacingScene/                    Car.jsx, Overlay.jsx, RacingScene.jsx/.module.css, sceneConfig.js
       GlassPanel.jsx/.module.css, Icons.jsx
     data/mockTelemetry.js            The single source of every number on screen right now (§12)
     index.css, main.jsx
-  public/models/rb22.glb             3D car asset
+  public/models/vf26.glb             3D car asset (Haas VF-26)
   vite.config.js, package.json
 ```
 
