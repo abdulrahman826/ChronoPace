@@ -24,10 +24,10 @@ export default function PosteriorPlot({ mean, std, socMax, width = 260, height =
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Rival SoC posterior distribution">
       <line x1="0" y1={height - 14} x2={width} y2={height - 14} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-      <rect x={bandX0} y="4" width={bandX1 - bandX0} height={height - 18} fill="var(--color-blue)" opacity="0.08" />
-      <path d={areaPath} fill="var(--color-blue)" opacity="0.15" />
-      <path d={linePath} fill="none" stroke="var(--color-blue)" strokeWidth="1.8" />
-      <line x1={toX(mean)} y1="4" x2={toX(mean)} y2={height - 14} stroke="var(--color-blue)" strokeWidth="1.2" strokeDasharray="3 3" />
+      <rect x={bandX0} y="4" width={bandX1 - bandX0} height={height - 18} fill="var(--color-accent)" opacity="0.08" />
+      <path d={areaPath} fill="var(--color-accent)" opacity="0.15" />
+      <path d={linePath} fill="none" stroke="var(--color-accent)" strokeWidth="1.8" />
+      <line x1={toX(mean)} y1="4" x2={toX(mean)} y2={height - 14} stroke="var(--color-accent)" strokeWidth="1.2" strokeDasharray="3 3" />
       <text x="0" y={height} fontSize="9.5" fill="var(--color-text-muted)" fontFamily="var(--font-mono)">0 MJ</text>
       <text x={width} y={height} fontSize="9.5" fill="var(--color-text-muted)" fontFamily="var(--font-mono)" textAnchor="end">
         {socMax.toFixed(1)} MJ

@@ -10,6 +10,34 @@ export const telemetry = {
   carNumber: 23,
   speedKmh: 312,
   ersSoC: { currentMj: 6.8, maxMj: 9.0 },
+  // Cosmetic race-clock display only — no session-timing logic behind it.
+  raceTimeLabel: '24:32.456',
+}
+
+// Presentation-layer labels for the 5 backend DeploymentMode values.
+// This is display text only — code that reasons about modes anywhere
+// else must keep using the raw enum strings below, never these labels.
+export const MODE_LABELS = {
+  CONSERVE_MODE: 'CONSERVE',
+  BALANCED_MODE: 'BALANCED',
+  ARM_OVERTAKE_MODE: 'ARM OVERTAKE',
+  USE_OVERTAKE_BONUS_MODE: 'USE OVERTAKE BONUS',
+  PUSH_MODE: 'PUSH',
+}
+
+// Footer strip — static scenario flavor for this fixed demo lap, same
+// spirit as `telemetry.session`/`carNumber` above: not a claim of live
+// weather/sensor integration. `dataMode` exists specifically so the UI
+// never implies it's receiving live FIA/team telemetry.
+export const raceStatus = {
+  track: 'MONZA',
+  tempC: 26,
+  airTempC: 24,
+  windKmh: 6,
+  tyre: 'MEDIUM',
+  dataRateHz: 128,
+  system: 'NOMINAL',
+  dataMode: 'SIMULATION / REPLAY',
 }
 
 // Stage 1 — Compliance Probe

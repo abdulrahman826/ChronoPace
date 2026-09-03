@@ -1,55 +1,154 @@
-.pageTitle {
-  text-align: center;
-  padding: 20px 0;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 26px;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  color: var(--color-text-primary);
-}
-.pageTitle span {
-  color: var(--color-blue);
+/* Fixed control-room shell: exactly 100vh/100dvh, nothing scrolls — not
+   the page, and not any primary panel either. min-height:0 appears at
+   every nested flex level on purpose — the standard fix for the "flex
+   children refuse to shrink below their content size" gotcha that would
+   otherwise defeat this.
+
+   This is a structural fix, not a font-shrinking one: the panels that
+   need real room to breathe (Rival Estimator, Circuit, Opportunity
+   Timeline) are flex:1 elastic zones that absorb whatever space is
+   available; only the handful of naturally-compact panels (Decision,
+   Pipeline, Monte Carlo) size to their own content. Nothing here relies
+   on hiding or shrinking text to make content fit a shrinking box. */
+.shell {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .dashboard {
-  display: grid;
-  grid-template-columns: 2.2fr 1fr;
-  gap: 20px;
-  padding: 24px;
-  align-items: start;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 20px;
+  overflow: hidden;
 }
 
-.leftColumn,
+.mainRow {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 0.88fr 1.85fr 0.88fr;
+  gap: 16px;
+}
+
+/* --- LEFT: why + what --- */
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* --- CENTER: the car (primary subject) + its strategic validation --- */
+.centerColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The car keeps the dominant share of the center column's height —
+   roughly 55-60%, i.e. the "40-50% of the central visual area" floor the
+   brief sets, since Monte Carlo below it takes a fixed, content-sized
+   remainder rather than an equal split. */
+.carArea {
+  flex: 1;
+  min-height: 0;
+}
+
+/* --- RIGHT: where + when --- */
 .rightColumn {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* --- Supporting telemetry: demoted on purpose, one slim strip ---
+   Height measured against real rendered content (4 compliance rows +
+   header comes to ~150px), not guessed — see the two components' own
+   CSS for how they use it. */
+.supportRow {
+  flex-shrink: 0;
+  height: 168px;
+  display: flex;
+  gap: 16px;
+}
+.supportRow > * {
+  flex: 1;
   min-width: 0;
 }
 
-.rightColumn {
-  /* 100vh minus the dashboard's own padding minus the new title bar's
-     height (20px padding + 26px line-height, both sides), so the right
-     column still fills exactly down to the bottom of the viewport. */
-  height: calc(100vh - 44px - 66px);
+@media (max-width: 1700px) {
+  .mainRow {
+    grid-template-columns: 0.85fr 1.7fr 0.85fr;
+    gap: 14px;
+  }
 }
 
-.leftSubGrid {
-  display: grid;
-  grid-template-columns: 1fr 1.35fr;
-  gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 1100px) {
+/* Vertical space is the scarce resource for the no-scroll guarantee, not
+   horizontal. Kept intentionally light-touch: the elastic panels (Rival,
+   Circuit, Opportunity) already absorb a shorter viewport on their own by
+   shrinking their own flex share, so these tiers only trim outer gaps/
+   padding and the one fixed-height strip — never font sizes. */
+@media (max-height: 900px) {
   .dashboard {
-    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 18px;
   }
-  .leftSubGrid {
-    grid-template-columns: 1fr;
+  .mainRow {
+    gap: 12px;
   }
+  .leftColumn,
+  .centerColumn,
   .rightColumn {
+    gap: 8px;
+  }
+}
+
+@media (max-height: 800px) {
+  .dashboard {
+    gap: 6px;
+    padding: 8px 16px;
+  }
+  .leftColumn {
+    gap: 6px;
+  }
+}
+
+/* Below the smallest required target: a genuinely narrow/tablet window.
+   The fixed, no-scroll guarantee is for desktop widths; here it's fine to
+   fall back to a normal scrolling page rather than crushing three columns
+   into an unreadable strip. Kept last in the cascade so it always wins. */
+@media (max-width: 1100px) {
+  .shell {
     height: auto;
+    overflow: visible;
+  }
+  .dashboard {
+    overflow: visible;
+  }
+  .mainRow {
+    grid-template-columns: 1fr;
+  }
+  .leftColumn,
+  .rightColumn {
+    overflow: visible;
+  }
+  .carArea {
+    height: 420px;
+  }
+  .supportRow {
+    height: auto;
+    flex-direction: column;
   }
 }

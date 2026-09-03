@@ -68,3 +68,51 @@ export function BoltIcon(props) {
     </svg>
   )
 }
+
+export function ClockIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  )
+}
+
+export function MapIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z" />
+      <path d="M9 4v13M15 6.5v13" />
+    </svg>
+  )
+}
+
+export function TimelineIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 17l4-6 4 3 4-8 6 9" />
+      <circle cx="15" cy="6" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function PipelineIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="5" cy="6" r="2.2" />
+      <circle cx="19" cy="12" r="2.2" />
+      <circle cx="5" cy="18" r="2.2" />
+      <path d="M7.2 6h4.8a3 3 0 0 1 3 3v0" />
+      <path d="M7.2 18h4.8a3 3 0 0 0 3-3v0" />
+    </svg>
+  )
+}
+
+export function FlagIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 3v18" />
+      <path d="M5 4h13l-3 4 3 4H5" />
+    </svg>
+  )
+}

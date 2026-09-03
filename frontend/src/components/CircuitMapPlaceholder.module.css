@@ -1,0 +1,49 @@
+.wrap {
+  flex: 1.2;
+  min-height: 0;
+}
+
+.subtitle {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-secondary);
+}
+
+.empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-panel);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  /* Faint technical grid — suggests "instrumentation surface awaiting
+     data" without asserting any real track geometry. */
+  background-image:
+    linear-gradient(rgba(255, 46, 68, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 46, 68, 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, rgba(255, 46, 68, 0.06), transparent);
+  animation: scan 4.5s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0% { top: -40%; }
+  100% { top: 100%; }
+}

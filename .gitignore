@@ -1,5 +1,6 @@
 # Claude Code local/personal settings — not shared
 .claude/settings.local.json
+.claude/*.lock
 
 # Netlify CLI local site-linking state — machine-specific, not project source
 .netlify/

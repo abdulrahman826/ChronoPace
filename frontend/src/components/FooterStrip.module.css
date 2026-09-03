@@ -1,0 +1,62 @@
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 24px;
+  border-top: 1px solid var(--color-border);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.items {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.itemLabel {
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.systemOk {
+  color: var(--color-green);
+}
+
+/* Deliberately not styled as an error/warning — this is a standing
+   disclaimer, not a status the user needs to act on. Subtle by design,
+   per the requirement that it never implies live telemetry access. */
+.dataMode {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 1400px) {
+  .footer {
+    padding: 8px 16px;
+    gap: 8px;
+  }
+  .items {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 900px) {
+  .footer {
+    justify-content: center;
+    text-align: center;
+  }
+}

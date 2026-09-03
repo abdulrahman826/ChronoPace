@@ -1,68 +1,101 @@
+/* Left column now holds only 2 panels (Decision Pipeline removed), and
+   this one — flex:1 in a column with one auto-height sibling — absorbs
+   all the freed vertical space automatically. The padding/gap values
+   below are deliberately generous: this panel should read as a major
+   intelligence module, not a compact card, now that it has real room. */
+.wrap {
+  flex: 1;
+  min-height: 0;
+  padding: 22px 26px;
+  gap: 20px;
+}
+
 .subtitle {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   letter-spacing: 0.06em;
   color: var(--color-text-secondary);
-  margin-top: -8px;
+  margin-top: -6px;
 }
 
-.plotRow {
+.headlinePlot {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
-.plotStats {
+.headline {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 0;
 }
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+.headlineValue {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--color-accent-bright);
+  text-shadow: 0 0 18px rgba(255, 46, 68, 0.35);
+  white-space: nowrap;
 }
-.statLabel {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-.stat .num {
+.headlineSpread {
   font-size: 15px;
-  color: var(--color-blue);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.plotWrap {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+}
+.plotWrap svg {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
 }
 
 .readouts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 10px 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 16px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 .readout {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  min-width: 0;
 }
 .readoutLabel {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--color-text-secondary);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.readout .num {
+.readoutValue {
   font-size: 14px;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .indicator {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  background: rgba(255, 176, 0, 0.08);
-  border: 1px solid rgba(255, 176, 0, 0.3);
+  gap: 10px;
+  background: rgba(255, 167, 38, 0.08);
+  border: 1px solid rgba(255, 167, 38, 0.3);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 12px 16px;
 }
 .dot {
   width: 8px;
@@ -89,4 +122,70 @@
   font-size: 10px;
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
+}
+
+/* Height-based tiers kept last on purpose — a media-query override placed
+   before the base rule it targets loses the cascade at equal specificity.
+   Still needed for genuinely short viewports, but each tier now starts
+   from a roomier baseline than before, since this panel no longer shares
+   the column with Decision Pipeline. 1440x900 (this feature's own target)
+   falls in the 900px tier, not the base rule above — tuned accordingly. */
+@media (max-height: 900px) {
+  .wrap {
+    padding: 18px 22px;
+    gap: 16px;
+  }
+  .headlinePlot {
+    gap: 12px;
+  }
+  .readouts {
+    padding: 12px 0;
+  }
+  .indicator {
+    padding: 9px 13px;
+  }
+}
+
+@media (max-height: 800px) {
+  .wrap {
+    padding: 14px 18px;
+    gap: 10px;
+  }
+  .readouts {
+    padding: 6px 0;
+  }
+  .indicator {
+    padding: 6px 10px;
+  }
+  /* Below a certain height the number-then-chart stack no longer fits as
+     two separate rows — merge them side by side instead (the plot's own
+     original arrangement), which reclaims a full row's height without
+     shrinking any text or hiding the disclaimer footer. */
+  .headlinePlot {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    /* flex-basis:0% (from the base flex:1) lets this shrink all the way
+       to 0 when its siblings' own content already fills the column —
+       and a flex-shrink:0 child (the headline number) doesn't respect
+       that collapse, it just overflows the 0-height box instead. Floor
+       it at the one line of text it actually needs so it can never
+       collapse out from under its own content. */
+    min-height: 36px;
+    flex-shrink: 0;
+  }
+  /* Stays a single baseline-aligned row (its own base layout, unchanged)
+     rather than stacking "2.1 MJ" over "± 0.6 MJ" — a 2-line stack next
+     to the plot needed more height than this tier has, and overflowed
+     into the subtitle above it. One line is both shorter and the plot's
+     original companion arrangement. */
+  .headline {
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .plotWrap {
+    flex: 0 1 auto;
+    max-width: 190px;
+  }
 }

@@ -176,19 +176,24 @@ actually recommended that lap*. Do not wire "qualification" to whether
 `ARM_OVERTAKE_MODE` was the chosen strategy; that would be wrong and is an
 easy mistake to make when implementing this.
 
-**Presentation-layer relabeling — proposed, not resolved.** Pitch material
-has floated user-facing action words (ATTACK / ARM / WAIT / HOLD /
-CONSERVE) as friendlier stand-ins for the five mode names above. These are
-UI labels only — the five backend enum values above are what code uses,
-and do not change. The exact 1:1 mapping is **not settled**: ATTACK and
-HOLD map cleanly (`USE_OVERTAKE_BONUS_MODE`, `BALANCED_MODE`), but WAIT
-reads as an Opportunity Horizon *strategy* name (`WAIT_N`, §9) rather than
-a single-lap mode, and `PUSH_MODE` ("sustained max-legal deployment, e.g.
-defending") doesn't fit ATTACK/ARM/WAIT/HOLD/CONSERVE at all — it may need
-its own label (e.g. DEFEND, echoing its own description) or to keep its
-backend name in the UI. Resolve this mapping explicitly before
-implementing the relabel (§17 step 11); don't let a component silently
-invent one.
+**Presentation-layer relabeling — resolved.** UI labels only — the five
+backend enum values above are what code uses, and do not change.
+Implemented as a small lookup (`MODE_LABELS` in `mockTelemetry.js`, used
+by `DecisionBanner` and `MonteCarloPlanner`):
+
+```js
+CONSERVE_MODE: 'CONSERVE'
+BALANCED_MODE: 'BALANCED'
+ARM_OVERTAKE_MODE: 'ARM OVERTAKE'
+USE_OVERTAKE_BONUS_MODE: 'USE OVERTAKE BONUS'
+PUSH_MODE: 'PUSH'
+```
+
+This superseded an earlier proposal (ATTACK/ARM/WAIT/HOLD/CONSERVE) that
+didn't cleanly cover all five modes — WAIT read as an Opportunity Horizon
+*strategy* name (`WAIT_N`, §9) rather than a mode, and `PUSH_MODE` didn't
+fit at all. The mapping above is a direct, unambiguous one-to-one for all
+five and needed no invented word.
 
 ## 5. Stage 1 — Regulatory Gate (`rule_gate.py`)
 
@@ -688,21 +693,38 @@ hand-typed, not computed.
 one `.module.css` file per component. No routing, no state management
 library; local `useState` only.
 
-**Layout** (`App.jsx`): a centered "CHRONOPACE" wordmark above a
-two-column dashboard —
-- **Left column**: `DecisionBanner` (full width) → a row of
-  `ComplianceProbe` + `MonteCarloPlanner` side by side → `RivalEstimator`.
-- **Right column**: `TelemetryHeader` → `Viewport3D`.
+**Layout** (`App.jsx`, redesigned 2026-09-02 — see the layout-redesign spec
+in `docs/superpowers/specs/`): `Header` → a 3-column main row → a 3-item
+lower info row → `FooterStrip`. The 3D viewport is now the visual anchor
+in the center, not tucked in a side column.
+- **Header**: centered wordmark + "AI MOTORSPORT INTELLIGENCE" subtitle;
+  top-right session/lap/car/race-time/LIVE cluster.
+- **Main row**: left column (`RivalEstimator` → `DecisionBanner` →
+  `MonteCarloPlanner`, stacked) — `Viewport3D` (center, larger) —
+  `CircuitMapPlaceholder` (right, honest empty placeholder, no real
+  Circuit Map logic yet).
+- **Lower row**: `EnergyStatus` (new) — `ComplianceProbe` (unchanged) —
+  `OpportunityTimelinePlaceholder` (honest placeholder, no Opportunity
+  Horizon data yet).
+- **Footer**: `FooterStrip` — track/weather/tyre flavor plus a `DATA
+  MODE: SIMULATION / REPLAY` indicator, so the UI never implies it's
+  receiving live FIA/team telemetry.
+
+`TelemetryHeader.jsx` (the old right-column header) is retired — its
+fields split between the new `Header` (session/lap/car) and `EnergyStatus`
+(speed, SoC, relabeled "Deployable").
 
 **Components, one-to-one with the backend concepts above**:
 | Component | Mirrors | What it shows |
 |---|---|---|
-| `DecisionBanner` | `ConfidenceGateResult` (§8) | The "EXECUTE: {mode}" / "OVERRIDE → {mode}" call, the 4 gate-pass pills, the CI-bound/t-stat/DCLI/rival-σ stats line. Has a working "Demo: toggle scenario" button that flips between a canned pass-case and a canned override-case — the only interactive element on the page right now. |
+| `DecisionBanner` | `ConfidenceGateResult` (§8) | The "EXECUTE: {mode}" / "OVERRIDE → {mode}" call (mode names through `MODE_LABELS`, §4), the 4 gate-pass pills, the CI-bound/t-stat/DCLI/rival-σ stats line. Has a working "Demo: toggle scenario" button that flips between a canned pass-case and a canned override-case — the only interactive element on the page right now. |
 | `ComplianceProbe` | `GateResult` (§5) | The FIA constant checks (MGU-K power, lap deployment, delta-SoC swing, overtake-bonus banking) as PASS/BREACH rows citing article numbers, plus a worked breach example. |
-| `MonteCarloPlanner` + `DistributionSparkline` | `PlannerResult` / `ModeProjection` (§7) | The 5-mode ranked table — laptime delta ± std, Sharpe ratio, per-mode sparkline, iteration count. |
+| `MonteCarloPlanner` + `DistributionSparkline` | `PlannerResult` / `ModeProjection` (§7) | The 5-mode ranked table — laptime delta ± std, Sharpe ratio, per-mode sparkline, iteration count, mode names through `MODE_LABELS`. |
 | `RivalEstimator` + `PosteriorPlot` | `RivalSocEstimate` (§6) | The posterior density plot (mean/σ), terminal speed, clipping point, attack tendency, and the "modeled, not measured" disclaimer. |
-| `TelemetryHeader` | `TelemetryInput` (§5) | Session/lap/car number, speed, ERS SoC gauge. |
-| `Viewport3D` | — (no backend equivalent) | Renders the team's own `rb22.glb` model (`frontend/public/models/`) on an auto-rotating turntable, lit by a controlled overhead spotlight plus fill lighting, standing on a dark stage with the cyan ring markers. Presentation only — carries no data. |
+| `EnergyStatus` | `TelemetryInput` (§5) | Deployable energy (= current SoC, relabeled), speed, current mode. Deliberately excludes "harvest rate" and "next window" — neither maps to real/spec'd data. |
+| `CircuitMapPlaceholder` / `OpportunityTimelinePlaceholder` | — (not built) | Honest empty placeholders sized for where the real components go later — no fake track data, no fake opportunity windows. |
+| `FooterStrip` | — | Track/weather/tyre flavor (static demo values) plus the `DATA MODE` disclaimer. |
+| `Viewport3D` | — (no backend equivalent) | Renders the team's own GLB model (`frontend/public/models/vf26.glb`) on an auto-rotating turntable, lit by a controlled overhead spotlight plus fill lighting, standing on a dark stage with the cyan ring markers. Bottom-aligned to the floor by bounding-box math, not a hardcoded offset, so it's correct for any model swap. Presentation only — carries no data. |
 | `GlassPanel` / `Icons` | — | Shared card shell (dark glass, blurred backdrop, glowing cyan border) and the hand-drawn SVG icon set every panel uses. No emoji anywhere in the UI, by design. |
 
 **Visual identity**: Rajdhani (display type) + JetBrains Mono (numeric/
@@ -728,10 +750,8 @@ reconciling."
 plan is a small **FastAPI** service wrapping Stages 1-3 (FastAPI uses
 Pydantic natively, so the exact models in §5-§8 become the API's request/
 response schemas with no translation layer), called from the frontend
-with `fetch`. Also undecided: where real telemetry to feed that API would
-come from — leading candidate is replaying real 2026 FastF1 timing data
-rather than synthetic data, for credibility, but nothing is built or
-committed here.
+with `fetch`. Telemetry source is resolved, not undecided — see §14: a
+deterministic `telemetry_simulator.py`, not FastF1.
 
 **Running it locally**: `cd frontend && npm install && npm run dev`
 (or, inside this Claude Code project, the `chronopace-frontend` config in
@@ -970,12 +990,14 @@ step, not just at the end:
     §14/§16 — no decision left to make here, just implementation.)
 11. UI work still needed, independent of backend progress and safe to do
     against richer mock data in the meantime: the 4-observable Rival
-    Estimator display, a "Why NOW?" consolidated reasoning panel, the
-    presentation-layer relabeling of the 5 modes (§4 — resolve the exact
-    mapping first, it isn't settled), an interactive Attack-vs-Wait
-    comparison, an Opportunity Horizon visualization, and rebuilding the
-    demo-scenario toggle around the three named Core Demo Scenarios (§11).
-    None of this is built yet either. **Explicitly lower priority than the
+    Estimator display, a "Why NOW?" consolidated reasoning panel, an
+    interactive Attack-vs-Wait comparison, an Opportunity Horizon
+    visualization (real Circuit Map and Opportunity Timeline content —
+    honest placeholders exist as of the 2026-09-02 layout redesign, §12),
+    and rebuilding the demo-scenario toggle around the three named Core
+    Demo Scenarios (§11). The presentation-layer relabeling of the 5
+    modes (§4) and the overall layout restructure are **done** — not
+    pending anymore. **Explicitly lower priority than the
     above**: further 3D viewport/visual polish. The car and telemetry
     visuals are supporting context for the decision, not the product —
     put new UI effort into making the reasoning legible before making the
