@@ -1,5 +1,5 @@
 import { FlagIcon } from './Icons'
-import { raceStatus } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './FooterStrip.module.css'
 
 /** Compact race-status strip. Static scenario flavor for this fixed demo
@@ -7,6 +7,7 @@ import styles from './FooterStrip.module.css'
  * of live weather/sensor integration. `dataMode` exists specifically so
  * the strip never implies the app is receiving live FIA/team telemetry. */
 export default function FooterStrip() {
+  const { raceStatus } = useDashboardData()
   const { track, tempC, airTempC, windKmh, tyre, dataRateHz, system, dataMode } = raceStatus
 
   return (

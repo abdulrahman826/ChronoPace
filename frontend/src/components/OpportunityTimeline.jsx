@@ -1,6 +1,7 @@
 import GlassPanel from './GlassPanel'
 import { TimelineIcon, BoltIcon } from './Icons'
-import { telemetry, overtakeBonus, modeProjections, MODE_LABELS, confidenceGatePass } from '../data/mockTelemetry'
+import { MODE_LABELS } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './OpportunityTimeline.module.css'
 
 /** Right column, lower slot. Real Opportunity Horizon output (lap-by-lap
@@ -12,6 +13,7 @@ import styles from './OpportunityTimeline.module.css'
  * is a real field from mockTelemetry.js — no invented track position,
  * sector, or turn data. */
 export default function OpportunityTimeline() {
+  const { telemetry, overtakeBonus, modeProjections, confidenceGatePass } = useDashboardData()
   const { lap } = telemetry
   const top = modeProjections[0]
   const runnerUp = modeProjections[1]

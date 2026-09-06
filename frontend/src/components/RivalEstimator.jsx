@@ -1,7 +1,7 @@
 import GlassPanel from './GlassPanel'
 import { RadarIcon } from './Icons'
 import PosteriorPlot from './PosteriorPlot'
-import { rivalEstimate } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './RivalEstimator.module.css'
 
 /** Left column, bottom slot — the key differentiator, so it gets whatever
@@ -9,6 +9,7 @@ import styles from './RivalEstimator.module.css'
  * than a fixed cramped box. Nothing here is measured, only inferred —
  * see the footer disclaimer and context.md §6. */
 export default function RivalEstimator() {
+  const { rivalEstimate } = useDashboardData()
   const { meanSoCMj, stdSoCMj, socMaxMj, terminalSpeedKmh, clippingPointFraction, nObservations, attackTendency } = rivalEstimate
 
   return (

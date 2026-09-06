@@ -8,6 +8,7 @@ import EnergyStatus from './components/EnergyStatus'
 import ComplianceProbe from './components/ComplianceProbe'
 import OpportunityTimeline from './components/OpportunityTimeline'
 import FooterStrip from './components/FooterStrip'
+import { DashboardDataProvider } from './services/DashboardDataContext'
 import styles from './App.module.css'
 
 /** Three-zone command-room composition: LEFT = why + what (decision chain),
@@ -19,6 +20,14 @@ import styles from './App.module.css'
  * are real, useful telemetry, but not what a judge needs to read in the
  * first 2-3 seconds. */
 export default function App() {
+  return (
+    <DashboardDataProvider>
+      <AppShell />
+    </DashboardDataProvider>
+  )
+}
+
+function AppShell() {
   return (
     <div className={styles.shell}>
       <Header />

@@ -1,6 +1,6 @@
 import GlassPanel from './GlassPanel'
 import { ShieldIcon, CheckIcon, WarningIcon } from './Icons'
-import { complianceChecks, overtakeBonus, breachExample } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './ComplianceProbe.module.css'
 
 function CheckRow({ rule, value, limit, unit, status }) {
@@ -30,6 +30,7 @@ function CheckRow({ rule, value, limit, unit, status }) {
  *   only from what this particular rendering shows.
  */
 export default function ComplianceProbe({ className, compact = false }) {
+  const { complianceChecks, overtakeBonus, breachExample } = useDashboardData()
   return (
     <GlassPanel className={className}>
       <div className="panelHeaderRow">

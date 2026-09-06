@@ -1,6 +1,7 @@
 import GlassPanel from './GlassPanel'
 import { BoltIcon } from './Icons'
-import { telemetry, MODE_LABELS, confidenceGatePass } from '../data/mockTelemetry'
+import { MODE_LABELS } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './EnergyStatus.module.css'
 
 const RADIUS = 26
@@ -14,6 +15,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
  * and "Next Window" specifically would imply an Opportunity Horizon
  * result that doesn't exist yet (see OpportunityTimeline). */
 export default function EnergyStatus() {
+  const { telemetry, confidenceGatePass } = useDashboardData()
   const { speedKmh, ersSoC } = telemetry
   const socPct = Math.round((ersSoC.currentMj / ersSoC.maxMj) * 100)
   const modeLabel = MODE_LABELS[confidenceGatePass.recommendedMode]

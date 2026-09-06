@@ -1,10 +1,11 @@
 import { ClockIcon } from './Icons'
-import { telemetry } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './Header.module.css'
 
 /** Page header — single wordmark (the old per-panel duplicate in the
  * retired TelemetryHeader is gone), session/lap/car/time on the right. */
 export default function Header() {
+  const { telemetry } = useDashboardData()
   const { session, lap, totalLaps, carNumber, raceTimeLabel } = telemetry
 
   return (

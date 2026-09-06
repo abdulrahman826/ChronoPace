@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import GlassPanel from './GlassPanel'
 import { CheckIcon, WarningIcon } from './Icons'
-import { confidenceGatePass, confidenceGateOverride, MODE_LABELS } from '../data/mockTelemetry'
+import { MODE_LABELS } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './DecisionBanner.module.css'
 
 const GATE_LABELS = {
@@ -16,6 +17,7 @@ const GATE_LABELS = {
  * ONLY the decision, not the reasoning behind it — that's Decision
  * Pipeline's job, and not the full simulation set — that's Monte Carlo's). */
 export default function DecisionBanner() {
+  const { confidenceGatePass, confidenceGateOverride } = useDashboardData()
   const [scenario, setScenario] = useState('pass')
   const result = scenario === 'pass' ? confidenceGatePass : confidenceGateOverride
   const isPass = !result.overridden
@@ -42,9 +44,10 @@ export default function DecisionBanner() {
       <div className={styles.whyRow}>
         <span className={styles.whyLabel}>WHY</span>
         <span className={styles.whyText}>
-          {isPass
-            ? `All ${Object.keys(result.gates).length} gates cleared — CI bound exceeds the ${result.minActionableLaptimeDeltaS.toFixed(2)}s action floor.`
-            : result.overrideReason}
+          {result.whyText ||
+            (isPass
+              ? `All ${Object.keys(result.gates).length} gates cleared — CI bound exceeds the ${result.minActionableLaptimeDeltaS.toFixed(2)}s action floor.`
+              : result.overrideReason)}
         </span>
       </div>
 

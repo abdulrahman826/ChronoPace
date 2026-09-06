@@ -1,6 +1,7 @@
 import GlassPanel from './GlassPanel'
 import { GaugeIcon } from './Icons'
-import { modeProjections, nIterations, MODE_LABELS } from '../data/mockTelemetry'
+import { MODE_LABELS } from '../data/mockTelemetry'
+import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './MonteCarloPlanner.module.css'
 
 // Normalise each mode's overtake/qualify probability (when it has one) onto
@@ -25,6 +26,7 @@ function riskLabel(sharpe) {
 }
 
 export default function MonteCarloPlanner() {
+  const { modeProjections, nIterations } = useDashboardData()
   const top = modeProjections[0]
 
   return (

@@ -19,12 +19,19 @@ assuming you know what's built and what's still just designed, because
 those two things currently do not match, and that mismatch matters.
 
 **Current reality in one line**: the *decision engine* (the actual
-"intelligence" in this hackathon's theme) is fully designed but has
-**zero lines of Python written**. The *dashboard* you can click through
-locally is fully built and working, but every number on it is hand-typed
-mock data — nothing on screen is computed by anything. If code and this
-file ever disagree once the backend exists, trust the code and flag the
-mismatch rather than trusting whichever is more convenient.
+"intelligence" in this hackathon's theme) — Stages 1-4 as designed in
+this document — has **zero lines of Python in this repository**. As of
+2026-09-03, though, a live backend answering real decision requests
+exists and is reachable (§12, "Backend integration") — it was built and
+is hosted outside this repo, so its source isn't here to read, and
+nothing here confirms it implements Stages 1-4 as specified below; only
+its external contract (what it accepts and returns over HTTP) is known.
+The *dashboard* you can click through locally now consumes that live
+backend when one is configured and reachable, and falls back to
+hand-typed mock data otherwise — it used to be mock-only,
+unconditionally; it no longer is. If code and this file ever disagree,
+trust the code and flag the mismatch rather than trusting whichever is
+more convenient.
 
 ## 1. What this project is
 
@@ -78,9 +85,12 @@ No LLM call exists anywhere in Stages 1-3. The LLM appears exactly once,
 in Stage 4, only after Stages 1-3 have produced final, verified numbers.
 The *decision* (Stages 1-3) is fast; the *narration* (Stage 4, an API
 call) is not — keep those two claims separate, never call the narrated
-output "real-time." (The dashboard's current mock data doesn't violate
-this law — it isn't computing anything at all yet, it's a static
-placeholder standing in for where Stage 1-3's real output will go.)
+output "real-time." (The dashboard doesn't violate this law either way it
+currently runs — on mock data it isn't computing anything at all, it's a
+static placeholder standing in for where Stage 1-3's real output will go;
+on live backend data (§12) it's relaying a real response, not itself
+computing one. Nothing under Stages 1-3 happens client-side in either
+case.)
 
 ## 3. Architecture — the four-stage pipeline
 
@@ -680,13 +690,19 @@ more hand-typed JS objects would repeat the exact problem this document's
 opening section warns about (a mock that looks like intelligence but
 isn't).
 
-## 12. Dashboard UI (`frontend/`) — built, but running on fake data
+## 12. Dashboard UI (`frontend/`) — built, now backend-connected with a mock fallback
 
-Unlike Stages 1-4, this part genuinely exists on disk and runs. It is a
-**visual prototype of what ChronoPace looks like once the backend is
-real** — every panel, layout, and interaction was designed to match the
-data shapes above exactly, but right now every number behind it is
-hand-typed, not computed.
+Unlike Stages 1-4 as designed in this document, this part genuinely
+exists on disk and runs. It started as a **visual prototype of what
+ChronoPace looks like once a backend is real** — every panel, layout,
+and interaction was designed to match the data shapes above exactly —
+and as of 2026-09-03 it's no longer just a prototype: it fetches from a
+real, live backend ("Backend integration", below) when one is configured
+and reachable, and falls back to the original hand-typed mock data
+otherwise. Both modes render through the exact same components; nothing
+on screen looks structurally different depending on which one is active,
+except the handful of fields the live backend has no equivalent for
+(also covered below).
 
 **Stack**: React 19 + Vite. `@react-three/fiber` + `@react-three/drei` +
 `three` for the 3D car viewport. Plain CSS Modules (no Tailwind/UI kit) —
@@ -730,7 +746,7 @@ and `EnergyStatus` (speed, SoC, relabeled "Deployable").
 | `RivalEstimator` + `PosteriorPlot` | `RivalSocEstimate` (§6) | A large headline mean±std readout, the posterior density plot, terminal speed, clipping point, attack tendency, a clipping-point/defending-capacity callout, and the "modeled, not measured" disclaimer. Sized to be a major module, not a compact card — see the layout note above. |
 | `EnergyStatus` | `TelemetryInput` (§5) | Deployable energy (= current SoC, relabeled), speed, current mode. Deliberately excludes "harvest rate" and "next window" — neither maps to real/spec'd data. |
 | `CircuitMapPlaceholder` | — (not built) | Honest empty placeholder sized for where the real Circuit Map goes later — no fake track/position data. Still a placeholder; nothing changed here since the redesign beyond re-theming. |
-| `OpportunityTimeline` | — (Opportunity Horizon not built) | No longer an empty placeholder — visualizes the one genuinely sequential mechanic already computed (the overtake bonus's bank-this-lap/spend-next-lap rule) as a 3-node timeline, using only real fields from `mockTelemetry.js` (lap number, gap, mode projections). Still not a real Opportunity Horizon visualization — that needs §9 built first. |
+| `OpportunityTimeline` | — (Opportunity Horizon not built) | No longer an empty placeholder — visualizes the one genuinely sequential mechanic already computed (the overtake bonus's bank-this-lap/spend-next-lap rule) as a 3-node timeline, using only real fields from the dashboard's data layer (lap number, gap, mode projections) — live when a backend's connected, mock otherwise (see "Backend integration", below). Still not a real Opportunity Horizon visualization — that needs §9 built first. |
 | `FooterStrip` | — | Track/weather/tyre flavor (static demo values) plus the `DATA MODE` disclaimer. |
 | `RacingScene` (`components/RacingScene/`) | — (no backend equivalent) | The car (`frontend/public/models/vf26.glb`) as a stationary subject, slowly rotating in place, under studio lighting with a red rim light — no road, no travel animation, no track. Scale-normalized via a single `CAR_LENGTH` constant (`sceneConfig.js`) rather than a hardcoded model-specific number, so it's correct for any GLB swap. Presentation only — carries no data. |
 | `GlassPanel` / `Icons` | — | Shared card shell (dark glass, blurred backdrop, glowing red border) and the hand-drawn SVG icon set every panel uses. No emoji anywhere in the UI, by design. |
@@ -747,28 +763,117 @@ throughout. This went through several redesign passes, including a full
 palette change from an earlier cyan-accented version — this is the
 version the team settled on, not a first draft.
 
-**The one thing to actually understand about the data**: everything
-renders from `frontend/src/data/mockTelemetry.js`, a single static file.
-Its exports are named and shaped to match the real Pydantic models above
-field-for-field on purpose (`complianceChecks`, `modeProjections`,
-`rivalEstimate`, `confidenceGatePass`/`confidenceGateOverride`, etc.) —
-so that once the backend exists, pointing the dashboard at it is a
-**data-source swap, not a component rewrite**. Do not let a UI change
-quietly invent a field the backend doesn't have, or rename one the
-backend does — that would turn this from "ready to wire up" into "needs
-reconciling."
+**The one thing to actually understand about the data**: every component
+reads through `useDashboardData()` (`frontend/src/services/
+DashboardDataContext.jsx`), not `mockTelemetry.js` directly — the one
+exception is `MODE_LABELS`, a display-text lookup rather than data,
+which every component still imports directly since it doesn't vary by
+data source. `mockTelemetry.js`'s exports are named and shaped to match
+the real Pydantic models above field-for-field on purpose
+(`complianceChecks`, `modeProjections`, `rivalEstimate`,
+`confidenceGatePass`/`confidenceGateOverride`, etc.), and that naming
+discipline is exactly what made connecting a real backend (below) a
+**data-source swap, not a component rewrite** when it actually happened,
+2026-09-03 — the prediction this paragraph originally made turned out to
+be correct. `mockTelemetry.js` itself hasn't gone anywhere: it's still
+exactly the shape every component expects, and it's what actually
+renders whenever no backend is configured or reachable. Do not let a UI
+change quietly invent a field neither source has, or rename one either
+does — that would turn this from "ready to wire up" into "needs
+reconciling," same as before.
 
-**Not built yet**: the bridge between this UI and a real backend. The
-plan is a small **FastAPI** service wrapping Stages 1-3 (FastAPI uses
-Pydantic natively, so the exact models in §5-§8 become the API's request/
-response schemas with no translation layer), called from the frontend
-with `fetch`. Telemetry source is resolved, not undecided — see §14: a
-deterministic `telemetry_simulator.py`, not FastF1.
+**Backend integration** (`frontend/src/services/`, added 2026-09-03):
+this UI now talks to a real backend over HTTP, with the mock file as an
+automatic fallback rather than the only mode. Three files:
+
+- `api.js` — a thin `fetch` wrapper. Reads the backend's base URL from
+  `VITE_API_URL` (set in `frontend/.env.local`, gitignored — never commit
+  a real value there) and POSTs to `/api/v1/decision`.
+- `adaptDecision.js` — reshapes the backend's raw response into the exact
+  object shape `mockTelemetry.js` already exports, so no component needed
+  to change to consume it (field-by-field table below).
+- `DashboardDataContext.jsx` — fetches once per page load, provides
+  whichever bundle is active (live or fallback) via the
+  `useDashboardData()` hook every component reads through.
+
+**What's actually known about the backend, and what isn't**: it's real
+and reachable — confirmed via its own `/openapi.json` (title
+"ChronoPace", FastAPI) and live `/api/v1/decision` calls that returned
+complete, internally-consistent payloads, re-verified across multiple
+calls with the lap counter genuinely advancing each time (not a cached
+response). Its source is **not in this repository** — it's built and
+hosted elsewhere, reached only over the network via `VITE_API_URL`. That
+means nothing here confirms it's an implementation of Stages 1-4 as
+specified in this document; only its external contract is known, and
+that contract doesn't line up with this document's stage boundaries
+one-to-one — its API surface is organised as `/api/race/*`,
+`/api/energy/*`, `/api/overtake/*`, `/api/strategy/*`,
+`/api/simulation/*`, and a consolidated `/api/v1/decision`, not as
+separate Stage 1/2/3 endpoints. Treat the two as related but
+independently-verified facts, not the same fact twice.
+
+The observed `/api/v1/decision` contract, for reference — request body
+`{session_id, lap, driver, rival, scenario}`, all optional with server
+defaults; the server appears to hold its own advancing replay-lap state
+independent of the request's `lap` value — response:
+
+```
+meta:        session_id, lap, total_laps, driver, rival, timestamp, data_mode
+decision:    mode, action, confidence, reason, reason_codes
+energy:      deployable_mj, harvest_rate_mj_per_lap, energy_state{soc_mj, soc_pct, ...}
+rival:       energy_distribution{low,medium,high}, estimated_reserve_mj, reserve_std_mj,
+               confidence, clipping{detected, location_percent, terminal_speed_kmh}
+opportunity: current{location, success_probability}, recommended_window{lap, location, ...}
+monte_carlo: number_of_simulations, strategies[{mode, expected_value, success_probability}],
+               best_strategy
+compliance:  legal, checks[{rule, status}]
+```
+
+**Field-by-field: live vs. still-static-fallback**, even when connected
+(the full, authoritative version of this lives as inline comments in
+`adaptDecision.js` — this is a summary, not a substitute for reading it
+before touching the mapping):
+
+| Dashboard field(s) | Source when live | Notes |
+|---|---|---|
+| Recommended mode, lap, total laps, car number, deployed SoC | **Live** | Direct or near-direct from the response |
+| Rival mean/std SoC, terminal speed, clipping point, attack tendency | **Live** | `attackTendency` is the argmax of the real `energy_distribution` |
+| Monte Carlo bars (mode, success %), simulation count, best strategy | **Live** | The bar's laptime-delta label reuses the response's `expected_value` — a dimensionless utility score, not literally seconds, despite the label; `sharpe` is a display-only rescale of `success_probability`, the same "derived, not fabricated" treatment the mock's own Sharpe field already got |
+| Decision Banner's "WHY" text | **Live** | Uses `decision.reason` verbatim when present |
+| Decision Banner's 4 gate pills | **Live-by-proxy** | The backend exposes one overall `compliance.legal` boolean, not four separate statistical tests — 3 of the 4 pills key off that one boolean; `rivalConfidence` keys off the real `rival.confidence` |
+| Decision Banner's CI-lower-bound / t-statistic / degrees-of-freedom / DCLI score | **Static (mock)** | No equivalent in this backend's response — it reports a single confidence score + reason codes, not a Welch t-test/DCLI breakdown. Not invented to fill the gap. |
+| Compliance Probe's rows (MGU-K power, lap deployment, SoC swing values/limits/units), breach example | **Static (mock)** | The live shape is `{rule: "Art.5.4.10 Lap Deployment", status: "pass"}` — a sentence plus a status, not discrete value/limit/unit fields, and it doesn't include an MGU-K Power check at all |
+| Overtake bonus gap/threshold seconds | **Static (mock)** | The backend embeds this in a sentence, not a discrete field; `qualified` and `bankedFromLap` ARE live (derived from `reason_codes` and the live lap number) |
+| Track/weather/tyre footer strip | **Static (mock)** | Not part of this response; `dataMode` specifically IS live (shows the backend's own `meta.data_mode`) |
+| Confidence-gate override scenario (the demo toggle's second state) | **Static (mock)**, always | No live "override" scenario exists from a single decision call — toggling to it still works, it just shows the canned example |
+
+**Fallback behavior, verified, not assumed**: an unset `VITE_API_URL`, a
+network failure, a non-2xx response, or a timeout all land in the same
+place — `DashboardDataContext` catches it, logs it, and renders the
+original static mock bundle with zero crash. Verified directly by
+pointing `VITE_API_URL` at a deliberately-unreachable host, confirming
+the clean revert, then restoring the real value. There's a brief
+loading-flash window on first paint (mock values render for the fraction
+of a second before the live fetch resolves) — not a bug, just means a
+screenshot taken in that exact window can show stale-looking numbers;
+give it a second before trusting what's on screen.
+
+**The Cloudflare tunnel URL used to verify all of this**
+(captured 2026-09-03) is a `trycloudflare.com` **quick tunnel** —
+ephemeral by design, tied to whatever process opened it, and likely to
+rotate or go dead whenever that process restarts. Don't treat any
+specific `trycloudflare.com` hostname as a stable integration point;
+treat `VITE_API_URL` as the stable thing, and expect to be handed a new
+URL to put there periodically until this has a permanent host.
 
 **Running it locally**: `cd frontend && npm install && npm run dev`
 (or, inside this Claude Code project, the `chronopace-frontend` config in
 `.claude/launch.json` — port 5173 by default, falls back automatically if
-that's taken).
+that's taken). To run against the live backend rather than mock data,
+set `VITE_API_URL` in `frontend/.env.local` first (Vite only reads env
+files at server start — restart the dev server after changing it, HMR
+won't pick it up). Omit the file, or leave the variable unset, to run
+mock-only exactly as before.
 
 ## 13. Conventions — follow exactly (backend/Python)
 
@@ -869,8 +974,11 @@ reference, don't re-derive a new test scheme:
   the end. Narrative order and computation order are allowed to differ;
   don't let the former quietly become the latter.
 - No renaming or reshaping a field in `mockTelemetry.js` without checking
-  it against the matching Pydantic model above — the whole point of the
-  mock data is that it won't need touching when the real API lands.
+  it against the matching Pydantic model above **and** against
+  `adaptDecision.js`'s live mapping (§12) — both read this exact shape
+  now, not just one hypothetical future consumer. This already paid off
+  once: connecting a real backend needed zero changes to
+  `mockTelemetry.js` or any component, exactly as designed.
 - No presenting an Opportunity Horizon strategy (§9) N laps out with the
   same confidence framing as a next-lap recommendation. The uncertainty
   growth in §9 is a hard requirement, not a nice-to-have — an
@@ -907,6 +1015,7 @@ requirements.txt                     numpy, pydantic, pytest, scipy (all pinned)
 
 --- frontend — actually built ---
 frontend/
+  .env.local                        VITE_API_URL — gitignored, machine-local, points at the live backend (§12)
   src/
     App.jsx, App.module.css          Top-level layout — 3-zone main row + support row (§12)
     components/
@@ -920,7 +1029,11 @@ frontend/
       OpportunityTimeline.jsx/.module.css
       RacingScene/                    Car.jsx, Overlay.jsx, RacingScene.jsx/.module.css, sceneConfig.js
       GlassPanel.jsx/.module.css, Icons.jsx
-    data/mockTelemetry.js            The single source of every number on screen right now (§12)
+    services/                        Backend integration, added 2026-09-03 (§12)
+      api.js                           fetch wrapper — POSTs VITE_API_URL + /api/v1/decision
+      adaptDecision.js                 reshapes the real response into mockTelemetry.js's exact shape
+      DashboardDataContext.jsx         fetch-once-per-load + live/fallback provider, useDashboardData()
+    data/mockTelemetry.js            Shape reference AND the fallback data source — no longer the only one (§12)
     index.css, main.jsx
   public/models/vf26.glb             3D car asset (Haas VF-26)
   vite.config.js, package.json
@@ -947,8 +1060,8 @@ those exist yet (§14).
 | Stage 3 — Confidence Gate | Designed, not implemented |
 | Opportunity Horizon (`opportunity_engine.py`) | Designed, not implemented — builds on Stages 2-3 |
 | Stage 4 — LLM Narrator, input contract (§10) | Not started (by design — waits on Stage 3) |
-| Dashboard UI | **Built and running**, against static mock data — does **not** yet reflect the 4-observable rival estimator, the Opportunity Horizon layer, or the three Core Demo Scenarios (§11); that UI work hasn't started |
-| Backend ↔ frontend bridge | Not built — planned as a small FastAPI service |
+| Dashboard UI | **Built and running**, now backend-connected with a mock fallback (§12, 2026-09-03) — still does **not** yet reflect the 4-observable rival estimator, the Opportunity Horizon layer, or the three Core Demo Scenarios (§11); that UI work hasn't started |
+| Backend ↔ frontend bridge | **Built, on the frontend side** (§12) — `services/api.js` / `adaptDecision.js` / `DashboardDataContext.jsx`, fetching a real, reachable backend. That backend's source isn't in this repo and isn't confirmed to be the Stages 1-4 pipeline specified above — see §12's "Backend integration" for exactly what is and isn't known |
 | Real telemetry source | **Resolved**: `telemetry_simulator.py` (synthetic, deterministic) for the hackathon build; FastF1/real data is a later calibration layer, not a dependency (§14) |
 
 ## 17. Immediate next task
@@ -998,11 +1111,19 @@ step, not just at the end:
    it changes what there is to narrate) are built and green. Resolve the
    `confidence`/`reason_codes` derivation (§10) as part of this step, not
    before — it needs the real gate output shape in hand.
-10. Once the backend above is green: build the FastAPI bridge exposing it,
-    and point `frontend/src/data/mockTelemetry.js`'s consumers at real
-    `fetch` calls instead — the mock file then becomes a fallback/demo
-    mode rather than the only mode. (Real telemetry source is resolved,
-    §14/§16 — no decision left to make here, just implementation.)
+10. **Partially done, out of sequence with the rest of this build order**:
+    the frontend-side half of this step — `fetch` calls replacing direct
+    `mockTelemetry.js` consumption, with the mock file surviving as a
+    fallback/demo mode rather than the only mode — is built and verified
+    (§12, 2026-09-03), against a real backend that already exists and is
+    reachable. What's *not* confirmed is whether that backend is this
+    document's own Stages 1-4 pipeline (built via steps 1-9 above) or a
+    separately-built implementation of the same product concept — its
+    source isn't in this repo. If/when Stages 1-4 above get built in
+    *this* repo, step 10's remaining real work is reconciling that
+    backend's actual endpoint shapes against what `adaptDecision.js`
+    currently expects, not writing the bridge itself again. (Real
+    telemetry source is resolved regardless, §14/§16.)
 11. UI work still needed, independent of backend progress and safe to do
     against richer mock data in the meantime: the 4-observable Rival
     Estimator display, a "Why NOW?" consolidated reasoning panel, an
