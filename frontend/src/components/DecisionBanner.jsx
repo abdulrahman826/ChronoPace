@@ -43,7 +43,15 @@ export default function DecisionBanner() {
       </div>
       <div className={styles.whyRow}>
         <span className={styles.whyLabel}>WHY</span>
-        <span className={styles.whyText}>
+        <span
+          className={styles.whyText}
+          title={
+            result.whyText ||
+            (isPass
+              ? `All ${Object.keys(result.gates).length} gates cleared — CI bound exceeds the ${result.minActionableLaptimeDeltaS.toFixed(2)}s action floor.`
+              : result.overrideReason)
+          }
+        >
           {result.whyText ||
             (isPass
               ? `All ${Object.keys(result.gates).length} gates cleared — CI bound exceeds the ${result.minActionableLaptimeDeltaS.toFixed(2)}s action floor.`
@@ -58,7 +66,7 @@ export default function DecisionBanner() {
         </div>
         <div className={styles.statBox}>
           <span className={styles.statLabel}>DCLI</span>
-          <span className={`num ${styles.statValue}`}>{result.dcliScore}/100</span>
+          <span className={`num ${styles.statValue}`}>{Math.round(result.dcliScore)}/100</span>
         </div>
         <div className={styles.statBox}>
           <span className={styles.statLabel}>Rival &sigma;</span>

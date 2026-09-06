@@ -95,10 +95,20 @@
   color: var(--color-text-muted);
   padding-top: 1px;
 }
+/* The live backend's `reasons` list can run to several sentences — much
+   longer than this panel's own derived one-liner it replaces when
+   connected. Capped to 3 lines with ellipsis rather than letting the
+   panel grow to fit an unbounded amount of real text (the full text is
+   still on the element via `title`) — a robustness fix for variable-
+   length content, not a layout change. */
 .whyText {
   font-size: 11.5px;
   line-height: 1.35;
   color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .statGrid {

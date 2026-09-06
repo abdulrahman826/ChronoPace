@@ -7,6 +7,7 @@ const FALLBACK_BUNDLE = {
   telemetry: mock.telemetry,
   raceStatus: mock.raceStatus,
   complianceChecks: mock.complianceChecks,
+  liveComplianceChecks: null, // null in fallback mode — ComplianceProbe renders complianceChecks (mock) instead
   breachExample: mock.breachExample,
   overtakeBonus: mock.overtakeBonus,
   modeProjections: mock.modeProjections,
@@ -51,7 +52,12 @@ export function DashboardDataProvider({ children }) {
     const controller = new AbortController()
 
     fetchDecision(
-      { session_id: 'monza_replay', lap: 34, driver: 'CAR_23', rival: 'RIVAL_1', scenario: 'B' },
+      // A mid-race snapshot (lap 25/50), not the provider's default last
+      // lap (50/50, "race over") — an explicit, disclosed choice of which
+      // real lap to view, not fabricated data. with_narrative:true asks
+      // the backend to also fill `narrative` (its own template/LLM prose,
+      // explicitly documented server-side as explanation-only).
+      { source: 'synthetic', scenario: 'B', seed: 42, total_laps: 50, lap: 25, with_narrative: true },
       { signal: controller.signal },
     )
       .then((raw) => {

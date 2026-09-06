@@ -3,17 +3,22 @@ import { ShieldIcon, CheckIcon, WarningIcon } from './Icons'
 import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './ComplianceProbe.module.css'
 
-function CheckRow({ rule, value, limit, unit, status }) {
-  const isPass = status === 'pass'
+// Accepts either the mock shape (value/limit/unit, rendered as
+// "X.X/Y.Y UNIT") or the live backend's shape (a preformatted `detail`
+// string, e.g. "1.87 / 9.0 MJ") — same row, whichever the data source
+// provides. `status` is pass/breach/info live; only an exact 'breach' is
+// shown as a failure, so an informational check never reads as a
+// regulatory violation it isn't.
+function CheckRow({ rule, value, limit, unit, detail, status }) {
+  const isBreach = status === 'breach'
+  const readout = detail != null ? detail : `${value.toFixed(1)}/${limit.toFixed(1)} ${unit}`
   return (
     <div className={styles.row}>
       <span className={styles.ruleName}>{rule}</span>
-      <span className={`${styles.readout} num`}>
-        {value.toFixed(1)}/{limit.toFixed(1)} {unit}
-      </span>
-      <span className={isPass ? styles.tagPass : styles.tagBreach}>
-        {isPass ? <CheckIcon width={11} height={11} /> : <WarningIcon width={11} height={11} />}
-        {isPass ? 'PASS' : 'BREACH'}
+      <span className={`${styles.readout} num`}>{readout}</span>
+      <span className={isBreach ? styles.tagBreach : styles.tagPass}>
+        {isBreach ? <WarningIcon width={11} height={11} /> : <CheckIcon width={11} height={11} />}
+        {isBreach ? 'BREACH' : status === 'info' ? 'INFO' : 'PASS'}
       </span>
     </div>
   )
@@ -30,7 +35,18 @@ function CheckRow({ rule, value, limit, unit, status }) {
  *   only from what this particular rendering shows.
  */
 export default function ComplianceProbe({ className, compact = false }) {
-  const { complianceChecks, overtakeBonus, breachExample } = useDashboardData()
+  const { complianceChecks, liveComplianceChecks, overtakeBonus, breachExample } = useDashboardData()
+  // Real live checks when connected (richer and differently-shaped than
+  // the mock's 3 fixed rows — see adaptDecision.js), the mock list
+  // otherwise. Never a silent mix of the two. The live list also includes
+  // two overtake-proximity/banking checks that duplicate the dedicated
+  // "Overtake Bonus" row rendered below (same real gap/threshold numbers,
+  // shown twice) — filtered out here to avoid showing the same fact
+  // twice, not to hide data; that's also what keeps this panel's compact
+  // row count matching what it was sized for.
+  const checksToRender = liveComplianceChecks
+    ? liveComplianceChecks.filter((c) => !/overtake/i.test(c.rule))
+    : complianceChecks
   return (
     <GlassPanel className={className}>
       <div className="panelHeaderRow">
@@ -40,7 +56,7 @@ export default function ComplianceProbe({ className, compact = false }) {
       </div>
 
       <div className={styles.list}>
-        {complianceChecks.map((c) => (
+        {checksToRender.map((c) => (
           <CheckRow key={c.rule} {...c} />
         ))}
 
