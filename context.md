@@ -870,10 +870,96 @@ URL to put there periodically until this has a permanent host.
 (or, inside this Claude Code project, the `chronopace-frontend` config in
 `.claude/launch.json` — port 5173 by default, falls back automatically if
 that's taken). To run against the live backend rather than mock data,
-set `VITE_API_URL` in `frontend/.env.local` first (Vite only reads env
-files at server start — restart the dev server after changing it, HMR
-won't pick it up). Omit the file, or leave the variable unset, to run
+set `VITE_API_URL` in `frontend/.env.local` (tunnel/production) and/or
+`frontend/.env.development.local` (added 2026-09-07, gitignored — wins
+over `.env.local` specifically for `npm run dev` per Vite's env-file
+precedence, so a local backend and a tunnel URL can both be configured
+without either overwriting the other). Vite only reads env files at
+server start — restart the dev server after changing either file, HMR
+won't pick it up. Omit both files, or leave the variable unset, to run
 mock-only exactly as before.
+
+**Flag — the contract described just above (request shape, field table,
+`meta`/`decision`/`rival` layouts) is the one observed 2026-09-03 and is
+now stale.** `adaptDecision.js`'s own header comment records a later
+rewrite (2026-09-06) against a materially richer `DecisionSnapshot`:
+`decision` gained `stage2_mode`/`confidence_overridden`/`override_reason`;
+a real `confidence` block now carries `ci_lower_bound_s`/`t_statistic`/
+`dcli_score`/four named gate booleans (all listed as "Static (mock)" in
+the table above — no longer true); `monte_carlo.ranked_modes` carries a
+real `std_laptime_delta_s` and `sharpe_ratio`; `rival` gained `bucket`/
+`n_observations`; `meta.driver`/`meta.rival` and `rival.clipping` were
+**removed** with no replacement (both now static-fallback, the opposite
+of this table's claim). Per this document's own rule (top of file): trust
+`adaptDecision.js`'s inline comments over the table above until someone
+rewrites this section properly — that's a reconciliation task in its own
+right, not done as part of adding the historical-replay feature below.
+
+**Historical Race Replay** (`HistoricalReplayControl.jsx`, added
+2026-09-07) — a judge-facing control, mounted in `Header`'s previously-
+empty side slot, that drives the existing dashboard from the backend's
+real FastF1 replay pipeline instead of synthetic/mock data. Three new
+backend-facing functions in `api.js`, one new `historical` state slice in
+`DashboardDataContext.jsx` — no second API layer, no second dashboard.
+
+- `GET /api/v1/replay/races` — the registry of supported historical
+  races (currently one: 2024 Italian Grand Prix, LEC vs PIA, 53 scheduled
+  laps). Loaded lazily, once, the first time the panel opens. The UI does
+  **not** hardcode this list — race/driver/rival names shown come from
+  this response, never a client-side lookup table.
+- `GET /api/v1/replay/historical/{race}/{lap}?driver=&rival=&seed=&full_snapshot=true`
+  — one real request per lap, fired only on RUN REPLAY (or one auto-play
+  tick). `full_snapshot=true` is load-bearing, not optional: without it
+  this endpoint returns a compact `{race, lap, summary}` preview shape,
+  not a `DecisionSnapshot` — `adaptDecision()` (built for the full shape)
+  would silently resolve every field to its mock fallback, rendering
+  static mock numbers under a "REAL TELEMETRY" label. This exact bug shipped
+  briefly (props to a live audit for catching it before a demo) and was
+  fixed by adding the query param and reading `adaptDecision(raw.snapshot)`
+  instead of `adaptDecision(raw)`. With it, `raw.snapshot` is
+  byte-shape-identical to `/api/v1/decision`'s own response, so the same
+  adapter, same components, same everything handle it — no historical-
+  specific rendering path exists anywhere in the dashboard.
+- **No hindsight**: the frontend sends only `race`, `lap`, and optionally
+  `driver`/`rival`/`seed` — never telemetry, never an outcome, never
+  anything from a lap after the one selected. Causal censoring (a lap's
+  decision may only see telemetry through that lap) is entirely the
+  backend's responsibility; confirmed server-side, not just assumed —
+  see the backend's own `test_future_telemetry_cannot_change_a_lap_n_decision`
+  and `test_real_monza_lap_n_only_sees_laps_up_to_n`.
+  **No lookup table anywhere**: every decision shown is this response's
+  own `decision.mode`/`decision.action`, never a client-side
+  `if (lap === N)` — the panel has no per-lap branching at all.
+- **Provenance & mode indicator**: the panel always shows a "REAL
+  TELEMETRY / FastF1 · {race name}" line next to a "MODELED / Rival
+  Energy · Opportunity · Monte Carlo · ChronoPace Decision" line, so it
+  never implies the 2024 car ran under 2026 regulations. `FooterStrip`'s
+  `DATA MODE` reads `HISTORICAL REPLAY · REAL TELEMETRY` while active,
+  reverting to the normal `LIVE BACKEND · SYNTHETIC` (or mock) reading via
+  a "← Back to synthetic mode" action that does a real re-fetch, not a
+  flag flip.
+- **Failure is honest, not silently mocked**: unlike the synthetic path
+  (which falls back to mock on any fetch failure, §12 above), a failed
+  historical fetch only sets `historical.error` — the dashboard's main
+  `state` is left untouched, so a real user-initiated historical request
+  never silently resolves to fabricated numbers. Verified live: with
+  `fastf1` not yet installed on the backend's Python environment, every
+  historical call 503'd with `"the fastf1 package is not installed..."`
+  and the panel correctly showed `HISTORICAL REPLAY UNAVAILABLE` plus the
+  real error text and a Retry button, while the rest of the dashboard
+  kept showing its last-good synthetic data.
+- **Verified against real telemetry** (2026-09-07, after installing
+  `fastf1==3.4.4` server-side — a backend-environment fix, not a code
+  change, done in the separate `engine` repo): 2024 Italian GP, LEC vs
+  PIA, laps 2/12/40 return `ARM_OVERTAKE_MODE`/`BALANCED_MODE`/
+  `BALANCED_MODE` respectively — the expected causal-replay pattern,
+  genuinely computed each time (confirmed identical on repeat calls with
+  the same seed, and matching whether fetched standalone or as part of a
+  full 53-lap replay), never hardcoded.
+- Optional auto-play (PLAY/PAUSE) advances lap-by-lap via a self-
+  scheduling `setTimeout` that reads state through a `useRef` (not
+  `setInterval` against a stale closure) — still one real backend call
+  per lap, never a bulk pre-fetch of the whole race.
 
 ## 13. Conventions — follow exactly (backend/Python)
 
@@ -1029,10 +1115,14 @@ frontend/
       OpportunityTimeline.jsx/.module.css
       RacingScene/                    Car.jsx, Overlay.jsx, RacingScene.jsx/.module.css, sceneConfig.js
       GlassPanel.jsx/.module.css, Icons.jsx
+      HistoricalReplayControl.jsx/.module.css   Judge-facing FastF1 replay panel, added 2026-09-07 (§12)
     services/                        Backend integration, added 2026-09-03 (§12)
-      api.js                           fetch wrapper — POSTs VITE_API_URL + /api/v1/decision
-      adaptDecision.js                 reshapes the real response into mockTelemetry.js's exact shape
-      DashboardDataContext.jsx         fetch-once-per-load + live/fallback provider, useDashboardData()
+      api.js                           fetch wrapper — POSTs VITE_API_URL + /api/v1/decision, plus
+                                          fetchReplayRaces()/fetchHistoricalLap() for historical replay (§12)
+      adaptDecision.js                 reshapes the real response into mockTelemetry.js's exact shape;
+                                          reused as-is for historical replay (same DecisionSnapshot shape)
+      DashboardDataContext.jsx         fetch-once-per-load + live/fallback provider, useDashboardData();
+                                          also owns the `historical` replay state/actions (§12)
     data/mockTelemetry.js            Shape reference AND the fallback data source — no longer the only one (§12)
     index.css, main.jsx
   public/models/vf26.glb             3D car asset (Haas VF-26)
@@ -1062,6 +1152,7 @@ those exist yet (§14).
 | Stage 4 — LLM Narrator, input contract (§10) | Not started (by design — waits on Stage 3) |
 | Dashboard UI | **Built and running**, now backend-connected with a mock fallback (§12, 2026-09-03) — still does **not** yet reflect the 4-observable rival estimator, the Opportunity Horizon layer, or the three Core Demo Scenarios (§11); that UI work hasn't started |
 | Backend ↔ frontend bridge | **Built, on the frontend side** (§12) — `services/api.js` / `adaptDecision.js` / `DashboardDataContext.jsx`, fetching a real, reachable backend. That backend's source isn't in this repo and isn't confirmed to be the Stages 1-4 pipeline specified above — see §12's "Backend integration" for exactly what is and isn't known |
+| Historical Race Replay control | **Built and verified against real FastF1 telemetry** (§12, 2026-09-07) — `HistoricalReplayControl.jsx` + the same backend-bridge files, driving the existing dashboard from `GET /api/v1/replay/{races,historical/...}` instead of synthetic data. Requires `fastf1` installed on the backend's own Python environment (a separate repo, not this one) — the UI shows an honest "HISTORICAL REPLAY UNAVAILABLE" rather than mock data when it isn't |
 | Real telemetry source | **Resolved**: `telemetry_simulator.py` (synthetic, deterministic) for the hackathon build; FastF1/real data is a later calibration layer, not a dependency (§14) |
 
 ## 17. Immediate next task
