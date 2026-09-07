@@ -116,3 +116,29 @@ export function FlagIcon(props) {
     </svg>
   )
 }
+
+export function HistoryIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l3 2" />
+      <path d="M5.5 4l1.5 3M18.5 4l-1.5 3" />
+    </svg>
+  )
+}
+
+export function PlayIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 4l13 8-13 8V4z" />
+    </svg>
+  )
+}
+
+export function PauseIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M8 4v16M16 4v16" />
+    </svg>
+  )
+}

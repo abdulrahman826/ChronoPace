@@ -1,5 +1,6 @@
 import { ClockIcon } from './Icons'
 import { useDashboardData } from '../services/DashboardDataContext'
+import HistoricalReplayControl from './HistoricalReplayControl'
 import styles from './Header.module.css'
 
 /** Page header — single wordmark (the old per-panel duplicate in the
@@ -10,7 +11,9 @@ export default function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.side} />
+      <div className={styles.side}>
+        <HistoricalReplayControl />
+      </div>
 
       <div className={styles.center}>
         <div className={styles.wordmark}>

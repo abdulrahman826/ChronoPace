@@ -1,0 +1,246 @@
+.wrap {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.toggle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+.toggleActive {
+  color: var(--color-accent-bright);
+  border-color: var(--color-border-strong);
+  background: rgba(255, 46, 68, 0.08);
+}
+
+/* position:fixed on purpose — this is an overlay, not a grid participant.
+   It adds zero height/width to the fixed no-scroll shell when closed, and
+   floats above it without reflowing anything when open. */
+.panel {
+  position: fixed;
+  top: 64px;
+  left: 20px;
+  width: 280px;
+  z-index: 40;
+  gap: 10px;
+  max-height: calc(100vh - 84px);
+  max-height: calc(100dvh - 84px);
+  overflow-y: auto;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text-primary);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.closeBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.status {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.fieldLabel {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.fieldValue {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lapField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.lapScale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+}
+.lapValue {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-accent-bright);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.runBtn {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff0f0;
+  background: var(--color-accent);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.runBtn:hover:not(:disabled) {
+  background: var(--color-accent-bright);
+}
+.runBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.playBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+.playBtn:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+.playBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provenance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+.provenanceTag {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-green);
+}
+.provenanceTagModeled {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-amber);
+}
+
+.exitBtn {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.exitBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 11px;
+  background: rgba(255, 46, 68, 0.08);
+  border: 1px solid rgba(255, 46, 68, 0.3);
+  border-radius: 8px;
+}
+.errorTitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-accent-bright);
+}
+.errorDetail {
+  font-size: 9.5px;
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+.retryBtn {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.retryBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
