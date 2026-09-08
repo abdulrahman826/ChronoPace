@@ -96,13 +96,31 @@ export function adaptDecision(raw) {
     nIterations: monteCarlo.n_iterations ?? mock.nIterations, // LIVE
 
     rivalEstimate: {
-      meanSoCMj: rival.mean_reserve_mj ?? mock.rivalEstimate.meanSoCMj, // LIVE
+      meanSoCMj: rival.mean_reserve_mj ?? mock.rivalEstimate.meanSoCMj, // LIVE — as of the dynamic-strategic-rival backend (2026-09-08), this whole block is already computed against whichever driver `strategicRival.driver` below names, not a fixed focus rival; nothing here needed to change for that, it just started meaning something more specific
       stdSoCMj: rival.reserve_std_mj ?? mock.rivalEstimate.stdSoCMj, // LIVE
       socMaxMj: mock.rivalEstimate.socMaxMj, // STATIC — FIA constant
       terminalSpeedKmh: mock.rivalEstimate.terminalSpeedKmh, // STATIC — RivalBlock's old `clipping` sub-object (terminal_speed_kmh, location_percent, detected) is gone from this contract version; was live before, no replacement field exists
       clippingPointFraction: mock.rivalEstimate.clippingPointFraction, // STATIC, same reason
       nObservations: rival.n_observations ?? mock.rivalEstimate.nObservations, // LIVE — previously STATIC, this endpoint didn't report it at all before
       attackTendency: rival.bucket ? rival.bucket.toUpperCase() : mock.rivalEstimate.attackTendency, // LIVE — the backend now computes this bucket itself (previously this adapter argmax'd `energy_distribution` client-side; that derivation is gone, this reads the backend's own field directly)
+    },
+
+    // LIVE — added 2026-09-08 alongside the backend's dynamic strategic-rival
+    // selection (commit 99f58d2, engine repo). RivalBlock now additively
+    // carries `driver`/`role`/`strategic_position`/`strategic_gap_s`/
+    // `strategic_rival_ahead`/`relevance_score` — always present, `null`
+    // across the board on synthetic responses (confirmed live: the backend
+    // has no full field to select a strategic opponent from there), so this
+    // reads as pure identity/role metadata, computed entirely server-side.
+    // Nothing here decides who the strategic rival is or what role they're
+    // in — it only reshapes the names.
+    strategicRival: {
+      driver: rival.driver ?? mock.strategicRival.driver, // LIVE — 3-letter code, or null (synthetic / no rival selected)
+      role: rival.role ?? mock.strategicRival.role, // LIVE — raw backend enum (ATTACK_TARGET/DEFENDING_THREAT/POSITION_BATTLE/STRATEGICALLY_RELEVANT/NONE); presentation-only relabeling happens in the component, the enum value itself is never altered here
+      position: rival.strategic_position ?? mock.strategicRival.position, // LIVE
+      gapS: rival.strategic_gap_s ?? mock.strategicRival.gapS, // LIVE
+      ahead: rival.strategic_rival_ahead ?? mock.strategicRival.ahead, // LIVE
+      relevanceScore: rival.relevance_score ?? mock.strategicRival.relevanceScore, // LIVE
     },
 
     confidenceGatePass: {

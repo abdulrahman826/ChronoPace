@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { fetchDecision, fetchReplayRaces, fetchHistoricalLap, isApiConfigured } from './api'
 import { adaptDecision } from './adaptDecision'
 import * as mock from '../data/mockTelemetry'
@@ -13,6 +13,7 @@ const FALLBACK_BUNDLE = {
   modeProjections: mock.modeProjections,
   nIterations: mock.nIterations,
   rivalEstimate: mock.rivalEstimate,
+  strategicRival: mock.strategicRival,
   confidenceGatePass: mock.confidenceGatePass,
   confidenceGateOverride: mock.confidenceGateOverride,
 }
@@ -80,6 +81,13 @@ export function DashboardDataProvider({ children }) {
     error: null,
   })
   const [historical, setHistorical] = useState(INITIAL_HISTORICAL)
+  // Bumped on every runHistoricalReplay call, checked when each one's fetch
+  // resolves — a response only gets applied if it's still the most recent
+  // request in flight. Without this, a slow response to an earlier lap could
+  // resolve after a faster response to a later one and overwrite it with
+  // stale data (including a stale strategic rival) if the user moves the
+  // slider and re-runs quickly.
+  const historicalRequestSeq = useRef(0)
 
   const loadSynthetic = useCallback((signal) => {
     return fetchDecision(SYNTHETIC_PARAMS, { signal }).then((raw) => {
@@ -146,9 +154,14 @@ export function DashboardDataProvider({ children }) {
   // keeps this from ever silently substituting mock data for a real
   // historical request the user explicitly made.
   const runHistoricalReplay = useCallback(async ({ race, lap, driver, rival }) => {
+    const seq = ++historicalRequestSeq.current
     setHistorical((h) => ({ ...h, loading: true, error: null }))
     try {
       const raw = await fetchHistoricalLap(race, lap, { driver, rival })
+      // A newer runHistoricalReplay call has started since this one fired —
+      // discard this response rather than let a slow earlier lap overwrite
+      // a faster later one (§14: the latest request must always win).
+      if (seq !== historicalRequestSeq.current) return false
       console.info('[ChronoPace] Historical decision received from backend:', raw)
       const adapted = adaptDecision(raw.snapshot)
       setState({
@@ -166,6 +179,7 @@ export function DashboardDataProvider({ children }) {
       setHistorical((h) => ({ ...h, active: true, race, lap, driver, rival, loading: false, error: null }))
       return true
     } catch (err) {
+      if (seq !== historicalRequestSeq.current) return false
       console.error('[ChronoPace] Historical replay fetch failed.', err)
       setHistorical((h) => ({ ...h, loading: false, error: err.message }))
       return false

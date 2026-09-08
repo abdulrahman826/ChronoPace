@@ -138,7 +138,15 @@ export default function HistoricalReplayControl() {
                   <span className={`num ${styles.fieldValue}`}>{historical.driver}</span>
                 </div>
                 <div className={styles.field}>
-                  <span className={styles.fieldLabel}>Rival</span>
+                  {/* "Focus Battle" — not "Rival": with dynamic strategic-rival
+                      selection (backend commit 99f58d2), the opponent actually
+                      relevant to the current lap's decision can be a different
+                      driver entirely (see the Rival Energy Estimator's own
+                      "STRATEGIC RIVAL" readout). This is the initial/fallback
+                      pairing the replay was set up with, still sent as `rival`
+                      on every request, but no longer presented as if it's
+                      permanently the active rival. */}
+                  <span className={styles.fieldLabel}>Focus Battle</span>
                   <span className={`num ${styles.fieldValue}`}>{historical.rival}</span>
                 </div>
               </div>

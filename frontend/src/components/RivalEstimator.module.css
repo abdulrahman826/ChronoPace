@@ -18,6 +18,88 @@
   margin-top: -6px;
 }
 
+/* Dynamic strategic-rival identity (added 2026-09-08) — sits between the
+   subtitle and the SoC headline, since the headline number is now this
+   rival's estimate specifically, not a fixed focus rival's. Hidden entirely
+   in synthetic mode (see RivalEstimator.jsx) rather than reserving space. */
+.strategicRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -2px;
+}
+.strategicId {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.strategicLabel {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.strategicHeadline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.strategicDriver {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.strategicGap {
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.strategicMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.rolePill {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.roleAttack {
+  color: #fff0f0;
+  background: var(--color-accent);
+}
+.roleDefend {
+  color: #2b1600;
+  background: var(--color-amber);
+}
+.roleNeutral {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+.roleNone {
+  color: var(--color-text-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+.relevance {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.relevanceLabel {
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
 .headlinePlot {
   display: flex;
   flex-direction: column;

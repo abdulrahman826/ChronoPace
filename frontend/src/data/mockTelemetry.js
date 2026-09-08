@@ -25,6 +25,18 @@ export const MODE_LABELS = {
   PUSH_MODE: 'PUSH',
 }
 
+// Presentation-layer labels for the backend's strategic-rival `role` enum
+// (RivalBlock.role, added 2026-09-08). Same rule as MODE_LABELS above: this
+// is display text only — the raw enum value is never altered, only relabeled
+// for the UI, and `role` itself always comes straight from the backend.
+export const ROLE_LABELS = {
+  ATTACK_TARGET: 'ATTACK TARGET',
+  DEFENDING_THREAT: 'DEFENDING THREAT',
+  POSITION_BATTLE: 'POSITION BATTLE',
+  STRATEGICALLY_RELEVANT: 'STRATEGICALLY RELEVANT',
+  NONE: 'NO IMMEDIATE RIVAL',
+}
+
 // Footer strip — static scenario flavor for this fixed demo lap, same
 // spirit as `telemetry.session`/`carNumber` above: not a claim of live
 // weather/sensor integration. `dataMode` exists specifically so the UI
@@ -83,6 +95,20 @@ export const rivalEstimate = {
   clippingPointFraction: 0.62,
   nObservations: 14,
   attackTendency: 'MEDIUM',
+}
+
+// Dynamic strategic-rival selection (added 2026-09-08) — synthetic mode has
+// no full race field for the backend to select a strategic opponent from, so
+// this is null across the board, matching the live /api/v1/decision response
+// itself (every field below comes back present-but-null, not omitted). This
+// is the correct "no fabricated rival" default, not a placeholder to fill in.
+export const strategicRival = {
+  driver: null,
+  role: null,
+  position: null,
+  gapS: null,
+  ahead: null,
+  relevanceScore: null,
 }
 
 // Stage 3 — ConfidenceGateResult (the "pass" demo state)

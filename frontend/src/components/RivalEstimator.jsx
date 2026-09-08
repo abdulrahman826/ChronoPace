@@ -2,15 +2,35 @@ import GlassPanel from './GlassPanel'
 import { RadarIcon } from './Icons'
 import PosteriorPlot from './PosteriorPlot'
 import { useDashboardData } from '../services/DashboardDataContext'
+import { ROLE_LABELS } from '../data/mockTelemetry'
 import styles from './RivalEstimator.module.css'
+
+// role -> pill color class. ATTACK_TARGET/DEFENDING_THREAT get the same
+// red/amber treatment DecisionBanner and the clipping-point indicator below
+// already use for "act now" vs. "watch out"; POSITION_BATTLE and
+// STRATEGICALLY_RELEVANT are informational, not urgent, so they share a
+// neutral style; NONE is deliberately the most de-emphasized of all.
+function rolePillClass(role) {
+  if (role === 'ATTACK_TARGET') return styles.roleAttack
+  if (role === 'DEFENDING_THREAT') return styles.roleDefend
+  if (role === 'NONE') return styles.roleNone
+  return styles.roleNeutral // POSITION_BATTLE, STRATEGICALLY_RELEVANT
+}
 
 /** Left column, bottom slot — the key differentiator, so it gets whatever
  * vertical room the column has left (flex:1 in App.module.css) rather
  * than a fixed cramped box. Nothing here is measured, only inferred —
  * see the footer disclaimer and context.md §6. */
 export default function RivalEstimator() {
-  const { rivalEstimate } = useDashboardData()
+  const { rivalEstimate, strategicRival } = useDashboardData()
   const { meanSoCMj, stdSoCMj, socMaxMj, terminalSpeedKmh, clippingPointFraction, nObservations, attackTendency } = rivalEstimate
+
+  // Only present on historical-replay responses (the backend sends every
+  // strategicRival field as null on synthetic decisions, since there's no
+  // full race field to select an opponent from there) — so this block adds
+  // nothing to the synthetic-mode panel, exactly as it looked before.
+  const hasStrategicRival = strategicRival.role != null
+  const isNone = strategicRival.role === 'NONE'
 
   return (
     <GlassPanel className={styles.wrap}>
@@ -19,6 +39,33 @@ export default function RivalEstimator() {
         <h3>RIVAL ENERGY ESTIMATOR</h3>
       </div>
       <div className={styles.subtitle}>PARTICLE FILTER — POSTERIOR SoC</div>
+
+      {hasStrategicRival && (
+        <div className={styles.strategicRow}>
+          <div className={styles.strategicId}>
+            <span className={styles.strategicLabel}>Strategic Rival</span>
+            <div className={styles.strategicHeadline}>
+              <span className={`num ${styles.strategicDriver}`}>{isNone ? 'NONE' : strategicRival.driver}</span>
+              {!isNone && strategicRival.position != null && strategicRival.gapS != null && (
+                <span className={`num ${styles.strategicGap}`}>
+                  P{strategicRival.position} &middot; {strategicRival.gapS.toFixed(2)}s {strategicRival.ahead ? 'AHEAD' : 'BEHIND'}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className={styles.strategicMeta}>
+            <span className={`${styles.rolePill} ${rolePillClass(strategicRival.role)}`}>
+              {ROLE_LABELS[strategicRival.role] ?? strategicRival.role}
+            </span>
+            {!isNone && strategicRival.relevanceScore != null && (
+              <div className={styles.relevance}>
+                <span className={styles.relevanceLabel}>Relevance</span>
+                <span className="num">{Math.round(strategicRival.relevanceScore * 100)}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className={styles.headlinePlot}>
         <div className={styles.headline}>
