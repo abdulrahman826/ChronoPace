@@ -80,6 +80,15 @@
   animation: pulse 1.6s ease-in-out infinite;
 }
 
+.liveReplay {
+  color: var(--color-accent);
+}
+
+.liveReplay .liveDot {
+  background: var(--color-accent);
+  box-shadow: 0 0 6px var(--color-accent);
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }

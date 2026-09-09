@@ -6,7 +6,7 @@ import styles from './Header.module.css'
 /** Page header — single wordmark (the old per-panel duplicate in the
  * retired TelemetryHeader is gone), session/lap/car/time on the right. */
 export default function Header() {
-  const { telemetry } = useDashboardData()
+  const { telemetry, historical } = useDashboardData()
   const { session, lap, totalLaps, carNumber, raceTimeLabel } = telemetry
 
   return (
@@ -31,10 +31,17 @@ export default function Header() {
           <ClockIcon width={13} height={13} />
           <span className="num">{raceTimeLabel}</span>
         </span>
-        <span className={styles.live}>
-          <span className={styles.liveDot} />
-          LIVE
-        </span>
+        {historical.active ? (
+          <span className={`${styles.live} ${styles.liveReplay}`}>
+            <span className={styles.liveDot} />
+            REPLAY
+          </span>
+        ) : (
+          <span className={styles.live}>
+            <span className={styles.liveDot} />
+            LIVE
+          </span>
+        )}
       </div>
     </header>
   )

@@ -63,12 +63,18 @@ export function adaptDecision(raw) {
       carNumber: mock.telemetry.carNumber, // STATIC — SnapshotMeta no longer carries a driver/car field at all (dropped in this contract version; was live before)
       ersSoC: {
         currentMj: energy.soc_mj ?? mock.telemetry.ersSoC.currentMj, // LIVE
-        maxMj: mock.telemetry.ersSoC.maxMj, // STATIC — FIA Art.5.4.10 constant, not a per-request value
+        maxMj: energy.soc_capacity_mj ?? mock.telemetry.ersSoC.maxMj, // LIVE (FIA constant 9.0, now backend-confirmed)
       },
+      // additive — new EnergyBlock accounting fields (all MODEL_ASSUMPTION, from hardening commit 663c4a3)
+      lapDeployedMj: energy.deployed_this_lap_mj ?? null, // LIVE — modeled deployment from real throttle trace
+      lapRecoveredMj: energy.recovered_this_lap_mj ?? null, // LIVE — modeled recovery this lap
+      mguKPeakKw: energy.modeled_mgu_k_peak_kw ?? null, // LIVE — modeled peak MGU-K power this lap
+      energyIsModeled: energy.energy_is_modeled ?? true, // LIVE — always true for replay
     },
 
     raceStatus: {
-      ...mock.raceStatus, // track/temp/wind/tyre/dataRate — STATIC, no weather/session telemetry in this response
+      ...mock.raceStatus, // track/temp/wind/tyre/system — STATIC, no weather/session telemetry in this response
+      dataRateHz: null, // suppressed — backend doesn't expose cadence at the per-decision level; 128 was fabrication (§5)
       dataMode: meta.data_mode ? `LIVE BACKEND · ${meta.data_mode}` : mock.raceStatus.dataMode, // LIVE
     },
 

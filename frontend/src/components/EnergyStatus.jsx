@@ -16,7 +16,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
  * result that doesn't exist yet (see OpportunityTimeline). */
 export default function EnergyStatus() {
   const { telemetry, confidenceGatePass } = useDashboardData()
-  const { speedKmh, ersSoC } = telemetry
+  const { speedKmh, ersSoC, lapDeployedMj, mguKPeakKw, energyIsModeled } = telemetry
   const socPct = Math.round((ersSoC.currentMj / ersSoC.maxMj) * 100)
   const modeLabel = MODE_LABELS[confidenceGatePass.recommendedMode]
   const dashOffset = CIRCUMFERENCE * (1 - socPct / 100)
@@ -26,6 +26,9 @@ export default function EnergyStatus() {
       <div className="panelHeaderRow">
         <BoltIcon width={18} height={18} />
         <h3>ENERGY STATUS (YOU)</h3>
+      </div>
+      <div className={styles.subtitle}>
+        {energyIsModeled ? 'CHRONOPACE MODELED ENERGY STATE' : 'CHRONOPACE ENERGY STATE'}
       </div>
 
       <div className={styles.body}>
@@ -62,6 +65,18 @@ export default function EnergyStatus() {
             <span className={styles.label}>Mode</span>
             <span className={styles.mode}>{modeLabel}</span>
           </div>
+          {lapDeployedMj != null && (
+            <div className={styles.stat}>
+              <span className={styles.label}>Lap Deploy</span>
+              <span className="num">{lapDeployedMj.toFixed(2)} MJ</span>
+            </div>
+          )}
+          {mguKPeakKw != null && (
+            <div className={styles.stat}>
+              <span className={styles.label}>MGU-K Peak</span>
+              <span className="num">{Math.round(mguKPeakKw)} kW</span>
+            </div>
+          )}
         </div>
       </div>
     </GlassPanel>

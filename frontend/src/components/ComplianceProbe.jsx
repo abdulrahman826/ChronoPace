@@ -66,8 +66,8 @@ export default function ComplianceProbe({ className, compact = false }) {
             {overtakeBonus.gapS.toFixed(2)}s / {overtakeBonus.thresholdS.toFixed(1)}s
           </span>
           <span className={overtakeBonus.qualified ? styles.tagPass : styles.tagBreach}>
-            <CheckIcon width={11} height={11} />
-            QUALIFIED
+            {overtakeBonus.qualified ? <CheckIcon width={11} height={11} /> : <WarningIcon width={11} height={11} />}
+            {overtakeBonus.qualified ? 'QUALIFIED' : 'NOT QUALIFIED'}
           </span>
         </div>
         {!compact && (

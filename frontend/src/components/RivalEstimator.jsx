@@ -25,7 +25,7 @@ function rolePillClass(role) {
  * see the footer disclaimer and context.md §6. */
 export default function RivalEstimator() {
   const { rivalEstimate, strategicRival, historical, loadStrategicRivalTimeline } = useDashboardData()
-  const { meanSoCMj, stdSoCMj, socMaxMj, terminalSpeedKmh, clippingPointFraction, nObservations, attackTendency } = rivalEstimate
+  const { meanSoCMj, stdSoCMj, socMaxMj, nObservations, attackTendency } = rivalEstimate
   const [timelineOpen, setTimelineOpen] = useState(false)
 
   // Only present on historical-replay responses (the backend sends every
@@ -118,28 +118,16 @@ export default function RivalEstimator() {
 
       <div className={styles.readouts}>
         <div className={styles.readout}>
-          <span className={styles.readoutLabel}>Term. Speed</span>
-          <span className={`num ${styles.readoutValue}`}>{terminalSpeedKmh} km/h</span>
-        </div>
-        <div className={styles.readout}>
-          <span className={styles.readoutLabel}>Clip Point</span>
-          <span className={`num ${styles.readoutValue}`}>{Math.round(clippingPointFraction * 100)}%</span>
-        </div>
-        <div className={styles.readout}>
           <span className={styles.readoutLabel}>Attack</span>
           <span className={`num ${styles.readoutValue}`}>{attackTendency}</span>
         </div>
-      </div>
-
-      <div className={styles.indicator}>
-        <span className={styles.dot} />
-        <div>
-          <div className={styles.indicatorLabel}>CLIPPING POINT DETECTED — EARLY</div>
-          <div className={styles.indicatorSub}>Defending Capacity: LOW</div>
+        <div className={styles.readout}>
+          <span className={styles.readoutLabel}>Observations</span>
+          <span className={`num ${styles.readoutValue}`}>{nObservations}</span>
         </div>
       </div>
 
-      <div className={styles.footer}>MODELED, NOT MEASURED &middot; n = {nObservations} observations</div>
+      <div className={styles.footer}>MODELED, NOT MEASURED &middot; INFERRED from observable performance</div>
     </GlassPanel>
   )
 }

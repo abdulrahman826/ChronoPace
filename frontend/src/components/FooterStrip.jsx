@@ -34,10 +34,12 @@ export default function FooterStrip() {
           <span className={styles.itemLabel}>TYRE</span>
           <span className="num">{tyre}</span>
         </span>
-        <span className={styles.item}>
-          <span className={styles.itemLabel}>DATA RATE</span>
-          <span className="num">{dataRateHz} Hz</span>
-        </span>
+        {dataRateHz != null && (
+          <span className={styles.item}>
+            <span className={styles.itemLabel}>DATA RATE</span>
+            <span className="num">{dataRateHz} Hz</span>
+          </span>
+        )}
         <span className={styles.item}>
           <span className={styles.itemLabel}>SYSTEM</span>
           <span className={`num ${styles.systemOk}`}>{system}</span>
