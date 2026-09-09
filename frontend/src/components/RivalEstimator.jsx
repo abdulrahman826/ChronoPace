@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import GlassPanel from './GlassPanel'
 import { RadarIcon } from './Icons'
 import PosteriorPlot from './PosteriorPlot'
+import StrategicRivalTimeline from './StrategicRivalTimeline'
 import { useDashboardData } from '../services/DashboardDataContext'
 import { ROLE_LABELS } from '../data/mockTelemetry'
 import styles from './RivalEstimator.module.css'
@@ -22,8 +24,9 @@ function rolePillClass(role) {
  * than a fixed cramped box. Nothing here is measured, only inferred —
  * see the footer disclaimer and context.md §6. */
 export default function RivalEstimator() {
-  const { rivalEstimate, strategicRival } = useDashboardData()
+  const { rivalEstimate, strategicRival, historical, loadStrategicRivalTimeline } = useDashboardData()
   const { meanSoCMj, stdSoCMj, socMaxMj, terminalSpeedKmh, clippingPointFraction, nObservations, attackTendency } = rivalEstimate
+  const [timelineOpen, setTimelineOpen] = useState(false)
 
   // Only present on historical-replay responses (the backend sends every
   // strategicRival field as null on synthetic decisions, since there's no
@@ -31,6 +34,23 @@ export default function RivalEstimator() {
   // nothing to the synthetic-mode panel, exactly as it looked before.
   const hasStrategicRival = strategicRival.role != null
   const isNone = strategicRival.role === 'NONE'
+
+  // Telemetry-tick detail (§14/§16): only offered when THIS lap's pick was
+  // genuinely produced by the tick-level selector (raw.summary.strategic_
+  // rival.tick_level) — never shown as if every lap has it.
+  const tickLevel = historical.active && historical.tickSummary?.tickLevel
+  const changesThisLap = historical.tickSummary?.changesThisLap
+
+  const handleToggleTimeline = () => {
+    const next = !timelineOpen
+    setTimelineOpen(next)
+    if (next) {
+      loadStrategicRivalTimeline({
+        race: historical.race, lap: historical.lap, driver: historical.driver, rival: historical.rival,
+        season: historical.season, event: historical.seasonEvent, session: historical.sessionCode,
+      })
+    }
+  }
 
   return (
     <GlassPanel className={styles.wrap}>
@@ -65,6 +85,24 @@ export default function RivalEstimator() {
             )}
           </div>
         </div>
+      )}
+
+      {tickLevel && (
+        <div className={styles.tickRow}>
+          <span className={styles.tickNote}>
+            {changesThisLap === 1 ? '1 change' : `${changesThisLap ?? 0} changes`} this lap (telemetry-cadence)
+          </span>
+          <button type="button" className={styles.tickToggle} onClick={handleToggleTimeline}>
+            {timelineOpen ? 'Hide timeline' : 'Show timeline'}
+          </button>
+        </div>
+      )}
+      {tickLevel && timelineOpen && (
+        <StrategicRivalTimeline
+          timeline={historical.timeline}
+          loading={historical.timelineLoading}
+          error={historical.timelineError}
+        />
       )}
 
       <div className={styles.headlinePlot}>

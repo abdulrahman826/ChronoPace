@@ -100,6 +100,33 @@
   color: var(--color-text-muted);
 }
 
+.tickRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: -4px;
+}
+.tickNote {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+}
+.tickToggle {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tickToggle:hover {
+  color: var(--color-text-primary);
+}
+
 .headlinePlot {
   display: flex;
   flex-direction: column;
