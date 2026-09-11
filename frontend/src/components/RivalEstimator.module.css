@@ -1,34 +1,76 @@
-/* Left column now holds only 2 panels (Decision Pipeline removed), and
-   this one — flex:1 in a column with one auto-height sibling — absorbs
-   all the freed vertical space automatically. The padding/gap values
-   below are deliberately generous: this panel should read as a major
-   intelligence module, not a compact card, now that it has real room. */
+/* Left column, bottom slot — absorbs all remaining column height (flex:1).
+   Internal sections are separated by 1px hairlines and margin-top rather than
+   GlassPanel's gap, so we control the exact rhythm ourselves. */
 .wrap {
   flex: 1;
   min-height: 0;
-  padding: 22px 26px;
-  gap: 20px;
+  padding: 20px 24px;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .subtitle {
   font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.06em;
-  color: var(--color-text-secondary);
-  margin-top: -6px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
 }
 
-/* Dynamic strategic-rival identity (added 2026-09-08) — sits between the
-   subtitle and the SoC headline, since the headline number is now this
-   rival's estimate specifically, not a fixed focus rival's. Hidden entirely
-   in synthetic mode (see RivalEstimator.jsx) rather than reserving space. */
+/* Inference status badge — top right. Neutral/restrained, not alarmy. */
+.inferenceBadge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+.inferenceLabel {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+}
+.inferenceDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.inferenceDotPass {
+  background: rgba(245, 240, 238, 0.4);
+}
+.inferenceDotWarn {
+  background: rgba(255, 167, 38, 0.65);
+}
+
+/* ── Strategic rival identity ────────────────────────────── */
+
 .strategicRow {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-top: -2px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 .strategicId {
   display: flex;
   flex-direction: column;
@@ -36,10 +78,11 @@
   min-width: 0;
 }
 .strategicLabel {
-  font-size: 9px;
+  font-size: 8.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+  font-family: var(--font-mono);
 }
 .strategicHeadline {
   display: flex;
@@ -48,15 +91,17 @@
   flex-wrap: wrap;
 }
 .strategicDriver {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary);
+  letter-spacing: 0.04em;
 }
 .strategicGap {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
+
 .strategicMeta {
   display: flex;
   flex-direction: column;
@@ -65,10 +110,10 @@
   flex-shrink: 0;
 }
 .rolePill {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
@@ -94,18 +139,148 @@
   gap: 4px;
 }
 .relevanceLabel {
-  font-size: 8.5px;
+  font-size: 8px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+  font-family: var(--font-mono);
 }
+
+/* ── Primary estimate ────────────────────────────────────── */
+
+.estimateRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.estimateMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+/* Shared uppercase mono label used for every section heading */
+.fieldLabel {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  display: block;
+}
+
+.estimateValue {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  margin-top: 5px;
+  line-height: 1;
+}
+
+/* The primary number — off-white/chrome, NOT the brand red accent.
+   The colour choice deliberately avoids implying urgency or alarm; the
+   estimate is informational, not an action trigger. */
+.estimateNum {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.estimateUnit {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  padding-bottom: 3px;
+  line-height: 1;
+}
+.estimateUncertainty {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* Right column of the estimate row: observations + state belief */
+.estimateSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.sideItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.sideValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  letter-spacing: 0.03em;
+}
+
+/* ── Range bar ───────────────────────────────────────────── */
+
+/* Wrapper keeps the SVG from collapsing and provides the correct top margin */
+.rangeBarWrap {
+  margin-top: 10px;
+  /* Override SVG default inline baseline gap */
+  line-height: 0;
+}
+
+/* ── Meta row: confidence gate + observable inputs ───────── */
+
+.metaRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.metaValue {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.gatePassed {
+  color: rgba(245, 240, 238, 0.65);
+}
+.gateWarning {
+  color: var(--color-amber);
+}
+.evidenceInputs {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+}
+
+/* ── Tick row (historical replay only) ──────────────────── */
 
 .tickRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: -4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 .tickNote {
   font-family: var(--font-mono);
@@ -127,174 +302,72 @@
   color: var(--color-text-primary);
 }
 
-.headlinePlot {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-  min-height: 0;
-}
+/* ── Footer disclaimer ───────────────────────────────────── */
 
-.headline {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 10px;
-  padding: 4px 0;
-}
-.headlineValue {
-  font-size: 30px;
-  font-weight: 700;
-  color: var(--color-accent-bright);
-  text-shadow: 0 0 18px rgba(255, 46, 68, 0.35);
-  white-space: nowrap;
-}
-.headlineSpread {
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
-.plotWrap {
-  display: flex;
-  justify-content: center;
-  flex: 1;
-  min-height: 0;
-  align-items: center;
-}
-.plotWrap svg {
-  width: 100%;
-  height: auto;
-  max-height: 100%;
-}
-
-.readouts {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  padding: 16px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-.readout {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.readoutLabel {
-  font-size: 10px;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.readoutValue {
-  font-size: 14px;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.indicator {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: rgba(255, 167, 38, 0.08);
-  border: 1px solid rgba(255, 167, 38, 0.3);
-  border-radius: 8px;
-  padding: 12px 16px;
-}
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-amber);
-  box-shadow: 0 0 8px var(--color-amber);
-  margin-top: 4px;
-  flex-shrink: 0;
-}
-.indicatorLabel {
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--color-amber);
-}
-.indicatorSub {
-  font-size: 10.5px;
-  color: var(--color-text-secondary);
-  margin-top: 2px;
-}
-
+/* Subtle — this is a provenance note, not a warning banner.
+   "auto" top margin pushes it to the bottom of the flex column
+   when the panel has room to breathe. */
 .footer {
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
   color: var(--color-text-muted);
+  text-align: center;
 }
 
-/* Height-based tiers kept last on purpose — a media-query override placed
-   before the base rule it targets loses the cascade at equal specificity.
-   Still needed for genuinely short viewports, but each tier now starts
-   from a roomier baseline than before, since this panel no longer shares
-   the column with Decision Pipeline. 1440x900 (this feature's own target)
-   falls in the 900px tier, not the base rule above — tuned accordingly. */
+/* ── Height tiers ────────────────────────────────────────── */
+
+/* 1440×900 (the feature's primary target) falls here. */
 @media (max-height: 900px) {
   .wrap {
-    padding: 18px 22px;
-    gap: 16px;
+    padding: 16px 20px;
   }
-  .headlinePlot {
-    gap: 12px;
+  .strategicRow {
+    margin-top: 11px;
+    padding-top: 10px;
   }
-  .readouts {
-    padding: 12px 0;
+  .estimateRow {
+    margin-top: 13px;
+    padding-top: 11px;
   }
-  .indicator {
-    padding: 9px 13px;
+  .estimateNum {
+    font-size: 30px;
+  }
+  .rangeBarWrap {
+    margin-top: 8px;
+  }
+  .metaRow {
+    margin-top: 10px;
+    padding-top: 10px;
   }
 }
 
 @media (max-height: 800px) {
   .wrap {
-    padding: 14px 18px;
-    gap: 10px;
+    padding: 12px 16px;
   }
-  .readouts {
-    padding: 6px 0;
+  .strategicRow {
+    margin-top: 8px;
+    padding-top: 8px;
   }
-  .indicator {
-    padding: 6px 10px;
+  .estimateRow {
+    margin-top: 10px;
+    padding-top: 8px;
   }
-  /* Below a certain height the number-then-chart stack no longer fits as
-     two separate rows — merge them side by side instead (the plot's own
-     original arrangement), which reclaims a full row's height without
-     shrinking any text or hiding the disclaimer footer. */
-  .headlinePlot {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    /* flex-basis:0% (from the base flex:1) lets this shrink all the way
-       to 0 when its siblings' own content already fills the column —
-       and a flex-shrink:0 child (the headline number) doesn't respect
-       that collapse, it just overflows the 0-height box instead. Floor
-       it at the one line of text it actually needs so it can never
-       collapse out from under its own content. */
-    min-height: 36px;
-    flex-shrink: 0;
+  .estimateNum {
+    font-size: 26px;
   }
-  /* Stays a single baseline-aligned row (its own base layout, unchanged)
-     rather than stacking "2.1 MJ" over "± 0.6 MJ" — a 2-line stack next
-     to the plot needed more height than this tier has, and overflowed
-     into the subtitle above it. One line is both shorter and the plot's
-     original companion arrangement. */
-  .headline {
-    flex-shrink: 0;
-    padding: 0;
+  .rangeBarWrap {
+    margin-top: 5px;
   }
-  .plotWrap {
-    flex: 0 1 auto;
-    max-width: 190px;
+  .metaRow {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .footer {
+    padding-top: 8px;
   }
 }
