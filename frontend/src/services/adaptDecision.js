@@ -41,6 +41,7 @@ export function adaptDecision(raw) {
   const monteCarlo = raw.monte_carlo || {}
   const compliance = raw.compliance || {}
   const confidence = raw.confidence || {}
+  const opportunity = raw.opportunity || {}
 
   const rankedModes = Array.isArray(monteCarlo.ranked_modes) ? monteCarlo.ranked_modes : []
   const liveModeProjections = rankedModes.map((m, i) => ({
@@ -49,7 +50,10 @@ export function adaptDecision(raw) {
     laptimeDeltaS: m.mean_laptime_delta_s, // LIVE — a real laptime delta in seconds now, not a proxy score
     stdS: m.std_laptime_delta_s, // LIVE — previously STATIC (no per-mode spread was reported at all)
     sharpe: m.sharpe_ratio, // LIVE — the backend's own real Sharpe ratio; no more client-side rescale needed
-    extra: `${Math.round(m.overtake_probability * 100)}%`, // LIVE
+    // LIVE — P(this mode's simulation beats the BALANCED baseline), NOT P(overtake completion)
+    overtakeProbability: m.overtake_probability ?? null,
+    energyCostMj: m.energy_cost_mj ?? null, // LIVE
+    extra: `${Math.round(m.overtake_probability * 100)}%`, // kept for backward compat — prefer overtakeProbability
   }))
 
   const overtakeCheck = (compliance.checks || []).find((c) => /overtake mode proximity/i.test(c.rule))
@@ -109,6 +113,15 @@ export function adaptDecision(raw) {
       clippingPointFraction: mock.rivalEstimate.clippingPointFraction, // STATIC, same reason
       nObservations: rival.n_observations ?? mock.rivalEstimate.nObservations, // LIVE — previously STATIC, this endpoint didn't report it at all before
       attackTendency: rival.bucket ? rival.bucket.toUpperCase() : mock.rivalEstimate.attackTendency, // LIVE — the backend now computes this bucket itself (previously this adapter argmax'd `energy_distribution` client-side; that derivation is gone, this reads the backend's own field directly)
+      // New fields from hardened contract
+      distribution: rival.distribution ?? mock.rivalEstimate.distribution, // LIVE — {low, medium, high} posterior probabilities
+      confidence: rival.confidence ?? mock.rivalEstimate.confidence, // LIVE — 1 - normalized posterior std
+      estimateUncertain: rival.estimate_uncertain ?? mock.rivalEstimate.estimateUncertain, // LIVE
+      evidenceQuality: rival.evidence_quality ?? mock.rivalEstimate.evidenceQuality, // LIVE
+      posteriorHealth: rival.posterior_health ?? mock.rivalEstimate.posteriorHealth, // LIVE
+      baselineReady: rival.baseline_ready ?? mock.rivalEstimate.baselineReady, // LIVE
+      pDefend: rival.p_defend ?? mock.rivalEstimate.pDefend, // LIVE — P(rival actively defends)
+      freshnessLaps: rival.freshness_laps ?? mock.rivalEstimate.freshnessLaps, // LIVE
     },
 
     // LIVE — added 2026-09-08 alongside the backend's dynamic strategic-rival
@@ -143,6 +156,8 @@ export function adaptDecision(raw) {
       // reads as the natural continuation of that, not a restatement of
       // it. Either way this is backend text, never composed here.
       whyText: raw.reasons && raw.reasons.length ? raw.reasons.join(' ') : raw.narrative || null,
+      action: decision.action ?? mock.confidenceGatePass.action, // LIVE — ATTACK_NOW | WAIT_2_LAPS | WAIT_5_LAPS | HOLD | PUSH | CONSERVE
+      decisionConfidence: decision.confidence ?? mock.confidenceGatePass.decisionConfidence, // LIVE — same as confidence.overall
       gates: {
         // LIVE — all four now come directly from ConfidenceBlock's own
         // named booleans. Previously none of these had a real per-gate
@@ -156,6 +171,7 @@ export function adaptDecision(raw) {
         practicalSignificance: confidence.practical_significance_passed ?? mock.confidenceGatePass.gates.practicalSignificance,
         dcli: confidence.dcli_passed ?? mock.confidenceGatePass.gates.dcli,
         rivalConfidence: confidence.rival_confidence_passed ?? mock.confidenceGatePass.gates.rivalConfidence,
+        dataQuality: confidence.data_quality_passed ?? mock.confidenceGatePass.gates.dataQuality, // LIVE
       },
       ciLowerBoundS: confidence.ci_lower_bound_s ?? mock.confidenceGatePass.ciLowerBoundS, // LIVE — previously STATIC, no equivalent existed in the old contract
       minActionableLaptimeDeltaS: mock.confidenceGatePass.minActionableLaptimeDeltaS, // STATIC — a configured practical-significance floor, not returned by this endpoint
@@ -171,5 +187,36 @@ export function adaptDecision(raw) {
     // equivalent from a single decision call; toggling to it still works
     // exactly as before, just showing the canned example.
     confidenceGateOverride: mock.confidenceGateOverride,
+
+    // LIVE — Opportunity Horizon block: ranked strategies with horizon deltas,
+    // strategic values, and window probability. All fields passed through as-is
+    // (camelCase reshape only); nothing computed client-side.
+    opportunity: {
+      recommendedStrategy: opportunity.recommended_strategy ?? null,
+      prefersWait: opportunity.prefers_wait ?? null,
+      foregoneStrategy: opportunity.foregone_strategy ?? null,
+      foregoneValueGapS: opportunity.foregone_value_gap_s ?? null,
+      currentWindowOvertakeProb: opportunity.current_window_overtake_prob ?? null,
+      projectedWindowOvertakeProb: opportunity.projected_window_overtake_prob ?? null,
+      projectedWindowLap: opportunity.projected_window_lap ?? null,
+      uncertaintyNote: opportunity.uncertainty_note ?? null,
+      opportunityTrend: opportunity.opportunity_trend ?? null,
+      opportunityUncertain: opportunity.opportunity_uncertain ?? null,
+      rankedStrategies: Array.isArray(opportunity.ranked_strategies)
+        ? opportunity.ranked_strategies.map((s) => ({
+            name: s.name,
+            delayLaps: s.delay_laps ?? null,
+            meanHorizonDeltaS: s.mean_horizon_delta_s ?? null,
+            stdHorizonDeltaS: s.std_horizon_delta_s ?? null,
+            ciLowerS: s.ci_lower_s ?? null,
+            strategicValue: s.strategic_value ?? null,
+            currentOpportunityValue: s.current_opportunity_value ?? null,
+            futureOpportunityValue: s.future_opportunity_value ?? null,
+            energyOpportunityCost: s.energy_opportunity_cost ?? null,
+            energySpentMj: s.energy_spent_mj ?? null,
+            endSocMj: s.end_soc_mj ?? null,
+          }))
+        : mock.opportunity.rankedStrategies,
+    },
   }
 }

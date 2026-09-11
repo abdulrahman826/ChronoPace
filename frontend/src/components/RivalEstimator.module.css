@@ -229,6 +229,33 @@
   letter-spacing: 0.03em;
 }
 
+/* ── Distribution (STATE BELIEF expanded to 3-bucket) ───── */
+
+.distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: flex-end;
+}
+.distRow {
+  font-size: 11px;
+  color: var(--color-text-primary);
+  letter-spacing: 0.03em;
+}
+.distKey {
+  font-size: 8px;
+  color: var(--color-text-muted);
+  margin-right: 3px;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+}
+
+/* Inline confidence % appended to CONFIDENCE GATE pass/fail label */
+.gateConfidence {
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+}
+
 /* ── Range bar ───────────────────────────────────────────── */
 
 /* Wrapper keeps the SVG from collapsing and provides the correct top margin */

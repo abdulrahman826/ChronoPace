@@ -76,12 +76,13 @@ export const breachExample = {
 }
 
 // Stage 2 — Monte Carlo Planner (ModeProjection[])
+// overtakeProbability = P(this mode's simulation beats the BALANCED baseline), NOT P(overtake completion)
 export const modeProjections = [
-  { rank: 1, mode: 'USE_OVERTAKE_BONUS_MODE', laptimeDeltaS: -0.28, stdS: 0.14, sharpe: 2.0, extra: 'Overtake prob: 71%' },
-  { rank: 2, mode: 'ARM_OVERTAKE_MODE', laptimeDeltaS: -0.20, stdS: 0.18, sharpe: 1.1, extra: 'Qualify prob: 68%' },
-  { rank: 3, mode: 'PUSH_MODE', laptimeDeltaS: -0.12, stdS: 0.10, sharpe: 1.2, extra: null },
-  { rank: 4, mode: 'BALANCED_MODE', laptimeDeltaS: 0.0, stdS: 0.06, sharpe: 0.0, extra: 'baseline' },
-  { rank: 5, mode: 'CONSERVE_MODE', laptimeDeltaS: 0.15, stdS: 0.05, sharpe: -3.0, extra: null },
+  { rank: 1, mode: 'USE_OVERTAKE_BONUS_MODE', laptimeDeltaS: -0.28, stdS: 0.14, sharpe: 2.0, overtakeProbability: 0.71, energyCostMj: 1.5, extra: 'Overtake prob: 71%' },
+  { rank: 2, mode: 'ARM_OVERTAKE_MODE', laptimeDeltaS: -0.20, stdS: 0.18, sharpe: 1.1, overtakeProbability: 0.68, energyCostMj: 1.2, extra: 'Qualify prob: 68%' },
+  { rank: 3, mode: 'PUSH_MODE', laptimeDeltaS: -0.12, stdS: 0.10, sharpe: 1.2, overtakeProbability: 0.55, energyCostMj: 0.9, extra: null },
+  { rank: 4, mode: 'BALANCED_MODE', laptimeDeltaS: 0.0, stdS: 0.06, sharpe: 0.0, overtakeProbability: 0.50, energyCostMj: 0.5, extra: 'baseline' },
+  { rank: 5, mode: 'CONSERVE_MODE', laptimeDeltaS: 0.15, stdS: 0.05, sharpe: -3.0, overtakeProbability: 0.22, energyCostMj: 0.2, extra: null },
 ]
 
 export const nIterations = 10000
@@ -95,6 +96,14 @@ export const rivalEstimate = {
   clippingPointFraction: 0.62,
   nObservations: 14,
   attackTendency: 'MEDIUM',
+  distribution: { low: 0.12, medium: 0.58, high: 0.30 },
+  confidence: 0.42,
+  estimateUncertain: false,
+  evidenceQuality: 'moderate',
+  posteriorHealth: 'healthy',
+  baselineReady: true,
+  pDefend: 0.38,
+  freshnessLaps: 2,
 }
 
 // Dynamic strategic-rival selection (added 2026-09-08) — synthetic mode has
@@ -117,11 +126,14 @@ export const confidenceGatePass = {
   stage2RecommendedMode: 'USE_OVERTAKE_BONUS_MODE',
   overridden: false,
   overrideReason: null,
+  action: 'ATTACK_NOW',
+  decisionConfidence: 0.64,
   gates: {
     statisticalReliability: true,
     practicalSignificance: true,
     dcli: true,
     rivalConfidence: true,
+    dataQuality: true,
   },
   ciLowerBoundS: 0.08,
   minActionableLaptimeDeltaS: 0.05,
@@ -139,11 +151,14 @@ export const confidenceGateOverride = {
   stage2RecommendedMode: 'USE_OVERTAKE_BONUS_MODE',
   overridden: true,
   overrideReason: 'Rival confidence below threshold (σ 1.9 MJ > 1.5 MJ)',
+  action: 'HOLD',
+  decisionConfidence: 0.41,
   gates: {
     statisticalReliability: true,
     practicalSignificance: true,
     dcli: true,
     rivalConfidence: false,
+    dataQuality: true,
   },
   ciLowerBoundS: 0.07,
   minActionableLaptimeDeltaS: 0.05,
@@ -153,4 +168,24 @@ export const confidenceGateOverride = {
   rivalStdMj: 1.9,
   rivalThresholdMj: 1.5,
   nIterations,
+}
+
+// Opportunity Horizon — ranked strategy windows from the backend
+export const opportunity = {
+  recommendedStrategy: 'ATTACK_NOW',
+  prefersWait: false,
+  foregoneStrategy: 'WAIT_2',
+  foregoneValueGapS: 0.24,
+  currentWindowOvertakeProb: 0.56,
+  projectedWindowOvertakeProb: null,
+  projectedWindowLap: null,
+  uncertaintyNote: null,
+  opportunityTrend: null,
+  opportunityUncertain: false,
+  rankedStrategies: [
+    { name: 'ATTACK_NOW', delayLaps: 0, meanHorizonDeltaS: -0.40, stdHorizonDeltaS: 0.18, ciLowerS: -0.31, strategicValue: 1.40, currentOpportunityValue: 1.40, futureOpportunityValue: 0.0, energyOpportunityCost: 0.05, energySpentMj: 1.5, endSocMj: 5.3 },
+    { name: 'WAIT_2', delayLaps: 2, meanHorizonDeltaS: -0.22, stdHorizonDeltaS: 0.21, ciLowerS: -0.12, strategicValue: 1.16, currentOpportunityValue: 0.90, futureOpportunityValue: 0.26, energyOpportunityCost: 0.08, energySpentMj: 1.2, endSocMj: 5.6 },
+    { name: 'WAIT_5', delayLaps: 5, meanHorizonDeltaS: -0.10, stdHorizonDeltaS: 0.24, ciLowerS: -0.02, strategicValue: 0.87, currentOpportunityValue: 0.60, futureOpportunityValue: 0.27, energyOpportunityCost: 0.10, energySpentMj: 1.0, endSocMj: 5.8 },
+    { name: 'HOLD', delayLaps: 10, meanHorizonDeltaS: 0.05, stdHorizonDeltaS: 0.28, ciLowerS: 0.12, strategicValue: 0.03, currentOpportunityValue: 0.10, futureOpportunityValue: -0.07, energyOpportunityCost: 0.02, energySpentMj: 0.5, endSocMj: 6.3 },
+  ],
 }

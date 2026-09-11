@@ -4,15 +4,11 @@ import { MODE_LABELS } from '../data/mockTelemetry'
 import { useDashboardData } from '../services/DashboardDataContext'
 import styles from './MonteCarloPlanner.module.css'
 
-// Normalise each mode's overtake/qualify probability (when it has one) onto
-// a 0-100 bar width; modes without one (PUSH/BALANCED/CONSERVE) fall back
-// to a Sharpe-based width so every row still shows something proportional,
-// not an empty bar. Real numbers either way — nothing invented.
+// P(this mode beats BALANCED baseline) as a 0-100 bar width.
+// Falls back to a Sharpe-based width only when overtakeProbability is absent.
+// Real numbers either way — nothing invented.
 function barPercent(m) {
-  if (m.extra) {
-    const match = /(\d+)%/.exec(m.extra)
-    if (match) return Number(match[1])
-  }
+  if (m.overtakeProbability != null) return Math.round(m.overtakeProbability * 100)
   return Math.round(Math.max(0, Math.min(1, (m.sharpe + 3) / 5)) * 100)
 }
 
@@ -39,6 +35,14 @@ export default function MonteCarloPlanner() {
         </span>
       </div>
 
+      <div className={styles.colHeaders}>
+        <span>MODE</span>
+        <span />
+        <span className={styles.colHeaderRight}>VS BALANCED</span>
+        <span className={styles.colHeaderRight}>Δ LAP</span>
+        <span className={styles.colHeaderRight}>ENERGY</span>
+      </div>
+
       <div className={styles.bars}>
         {modeProjections.map((m) => {
           const pct = barPercent(m)
@@ -56,6 +60,9 @@ export default function MonteCarloPlanner() {
               <span className={`num ${styles.delta}`}>
                 {m.laptimeDeltaS > 0 ? '+' : ''}
                 {m.laptimeDeltaS.toFixed(2)}s
+              </span>
+              <span className={`num ${styles.energy}`}>
+                {m.energyCostMj != null ? `${m.energyCostMj.toFixed(1)}` : '—'}
               </span>
             </div>
           )

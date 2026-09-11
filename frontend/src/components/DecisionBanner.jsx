@@ -10,6 +10,7 @@ const GATE_LABELS = {
   practicalSignificance: 'SIGNIFICANCE',
   dcli: 'DRIVER LOAD',
   rivalConfidence: 'RIVAL CONF.',
+  dataQuality: 'DATA QUALITY',
 }
 
 /** Stage 3 Confidence Gate result — the actual decision, kept compact and
@@ -35,12 +36,31 @@ export default function DecisionBanner() {
         </button>
       </div>
 
+      {/* Planner's Stage 2 pick — shown when it differs from the gate result */}
+      {result.stage2RecommendedMode && result.stage2RecommendedMode !== result.recommendedMode && (
+        <div className={styles.plannerRow}>
+          <span className={styles.plannerLabel}>PLANNER</span>
+          <span className={`num ${styles.plannerValue}`}>{MODE_LABELS[result.stage2RecommendedMode]}</span>
+          <span className={styles.plannerArrow}>→ gate overrode</span>
+        </div>
+      )}
+
       <div className={styles.decisionRow}>
         <span className={`${styles.pulseDot} ${isPass ? styles.pulseDotGreen : styles.pulseDotAmber}`} />
         <h2 className={`${styles.decisionText} ${isPass ? styles.textGreen : styles.textAmber}`}>
           {isPass ? MODE_LABELS[result.recommendedMode] : `OVERRIDE → ${MODE_LABELS[result.recommendedMode]}`}
         </h2>
+        {result.decisionConfidence != null && (
+          <span className={styles.decisionConf}>{Math.round(result.decisionConfidence * 100)}%</span>
+        )}
       </div>
+
+      {result.action && (
+        <div className={styles.actionRow}>
+          <span className={styles.actionLabel}>ACTION</span>
+          <span className={`num ${styles.actionValue}`}>{result.action.replace(/_/g, ' ')}</span>
+        </div>
+      )}
       <div className={styles.whyRow}>
         <span className={styles.whyLabel}>WHY</span>
         <span

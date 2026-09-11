@@ -10,6 +10,8 @@
   margin-top: -4px;
 }
 
+/* ── Fallback: overtake bonus timeline ───────────────────── */
+
 .track {
   flex: 1;
   min-height: 0;
@@ -95,8 +97,130 @@
   line-height: 1.3;
 }
 
+/* ── Live: ranked strategies table ──────────────────────── */
+
+.strategyTable {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+  min-height: 0;
+}
+
+.stratRow {
+  display: grid;
+  grid-template-columns: 112px 1fr 54px;
+  align-items: center;
+  gap: 8px;
+}
+.stratRowRec {
+  /* No extra glow — a subtle distinction only */
+}
+
+.stratName {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.stratLabel {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stratBadge {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  color: #06110b;
+  background: var(--color-green);
+  flex-shrink: 0;
+}
+.stratBadgeAlt {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.stratBarTrack {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.stratBarFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-muted);
+}
+.stratBarFillRec {
+  background: var(--color-green);
+  opacity: 0.7;
+}
+
+.stratDelta {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── Footer metrics row ──────────────────────────────────── */
+
+.footMetrics {
+  display: flex;
+  gap: 16px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap;
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.metricLabel {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.metricValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.uncertaintyNote {
+  font-size: 9.5px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
 @media (max-width: 1700px) {
   .nodeDetail {
     display: none;
+  }
+  .stratRow {
+    grid-template-columns: 90px 1fr 50px;
   }
 }

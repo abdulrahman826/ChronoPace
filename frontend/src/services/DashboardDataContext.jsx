@@ -19,6 +19,7 @@ const FALLBACK_BUNDLE = {
   strategicRival: mock.strategicRival,
   confidenceGatePass: mock.confidenceGatePass,
   confidenceGateOverride: mock.confidenceGateOverride,
+  opportunity: mock.opportunity,
 }
 
 const SYNTHETIC_PARAMS = {
@@ -309,7 +310,7 @@ export function DashboardDataProvider({ children }) {
         // mode label this feature calls for — a real, tracked UI state
         // (a historical fetch just genuinely succeeded), not fabricated
         // data layered on top of the response.
-        raceStatus: { ...adapted.raceStatus, dataMode: 'HISTORICAL REPLAY · REAL TELEMETRY' },
+        raceStatus: { ...adapted.raceStatus, dataMode: 'FASTF1 HISTORICAL REPLAY' },
         isLive: true,
         loading: false,
         error: null,

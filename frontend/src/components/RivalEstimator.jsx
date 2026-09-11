@@ -65,7 +65,7 @@ function RangeBar({ mean, std, socMax }) {
  * Nothing here is directly measured — see the footer disclaimer and context.md §6. */
 export default function RivalEstimator() {
   const { rivalEstimate, strategicRival, historical, loadStrategicRivalTimeline, confidenceGatePass } = useDashboardData()
-  const { meanSoCMj, stdSoCMj, socMaxMj, nObservations, attackTendency } = rivalEstimate
+  const { meanSoCMj, stdSoCMj, socMaxMj, nObservations, attackTendency, distribution, confidence, evidenceQuality, pDefend } = rivalEstimate
   const inferenceGatePassed = confidenceGatePass.gates.rivalConfidence
   const [timelineOpen, setTimelineOpen] = useState(false)
 
@@ -148,7 +148,15 @@ export default function RivalEstimator() {
           </div>
           <div className={styles.sideItem}>
             <span className={styles.fieldLabel}>STATE BELIEF</span>
-            <span className={`num ${styles.sideValue}`}>{attackTendency}</span>
+            {distribution ? (
+              <div className={styles.distribution}>
+                <span className={`num ${styles.distRow}`}><span className={styles.distKey}>L</span>{Math.round(distribution.low * 100)}%</span>
+                <span className={`num ${styles.distRow}`}><span className={styles.distKey}>M</span>{Math.round(distribution.medium * 100)}%</span>
+                <span className={`num ${styles.distRow}`}><span className={styles.distKey}>H</span>{Math.round(distribution.high * 100)}%</span>
+              </div>
+            ) : (
+              <span className={`num ${styles.sideValue}`}>{attackTendency}</span>
+            )}
           </div>
         </div>
       </div>
@@ -164,11 +172,24 @@ export default function RivalEstimator() {
           <span className={styles.fieldLabel}>CONFIDENCE GATE</span>
           <span className={`num ${styles.metaValue} ${inferenceGatePassed ? styles.gatePassed : styles.gateWarning}`}>
             {inferenceGatePassed ? 'PASSED' : 'FAILED'}
+            {confidence != null && <span className={styles.gateConfidence}> · {Math.round(confidence * 100)}%</span>}
           </span>
         </div>
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>OBSERVABLE INPUTS</span>
           <span className={styles.evidenceInputs}>Speed · Accel · Sector · Terminal</span>
+        </div>
+      </div>
+
+      {/* ── Evidence quality + P(defend) ── */}
+      <div className={styles.metaRow}>
+        <div className={styles.metaItem}>
+          <span className={styles.fieldLabel}>EVIDENCE QUALITY</span>
+          <span className={`num ${styles.metaValue}`}>{evidenceQuality ? evidenceQuality.toUpperCase() : '—'}</span>
+        </div>
+        <div className={styles.metaItem}>
+          <span className={styles.fieldLabel}>P(DEFEND)</span>
+          <span className={`num ${styles.metaValue}`}>{pDefend != null ? `${Math.round(pDefend * 100)}%` : '—'}</span>
         </div>
       </div>
 
