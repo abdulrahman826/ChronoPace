@@ -121,6 +121,33 @@
   text-overflow: ellipsis;
 }
 
+/* Counterfactual row: runner-up mode + value gap + attack completion prob */
+.counterfactual {
+  display: flex;
+  gap: 14px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+.cfItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cfLabel {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.cfValue {
+  font-size: 11.5px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
 @media (max-width: 1700px) {
   .colHeaders,
   .row {

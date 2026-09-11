@@ -22,8 +22,9 @@ function riskLabel(sharpe) {
 }
 
 export default function MonteCarloPlanner() {
-  const { modeProjections, nIterations } = useDashboardData()
+  const { modeProjections, nIterations, runnerUpMode, modeValueGapS } = useDashboardData()
   const top = modeProjections[0]
+  const hasCounterfactual = runnerUpMode != null && modeValueGapS != null
 
   return (
     <GlassPanel className={styles.wrap}>
@@ -71,7 +72,7 @@ export default function MonteCarloPlanner() {
 
       <div className={styles.summary}>
         <div className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>Best Strategy</span>
+          <span className={styles.summaryLabel}>Planner Preference</span>
           <span className={`num ${styles.summaryValue}`}>{MODE_LABELS[top.mode]}</span>
         </div>
         <div className={styles.summaryItem}>
@@ -86,6 +87,26 @@ export default function MonteCarloPlanner() {
           <span className={`num ${styles.summaryValue}`}>{riskLabel(top.sharpe)}</span>
         </div>
       </div>
+
+      {/* Counterfactual: runner-up and value gap — backend-driven, only shown when supplied */}
+      {hasCounterfactual && (
+        <div className={styles.counterfactual}>
+          <div className={styles.cfItem}>
+            <span className={styles.cfLabel}>RUNNER-UP</span>
+            <span className={`num ${styles.cfValue}`}>{MODE_LABELS[runnerUpMode] ?? runnerUpMode}</span>
+          </div>
+          <div className={styles.cfItem}>
+            <span className={styles.cfLabel}>VALUE GAP</span>
+            <span className={`num ${styles.cfValue}`}>{modeValueGapS.toFixed(3)}s</span>
+          </div>
+          {top.attackCompletionProbability != null && (
+            <div className={styles.cfItem}>
+              <span className={styles.cfLabel}>ATTACK COMPLETION</span>
+              <span className={`num ${styles.cfValue}`}>{Math.round(top.attackCompletionProbability * 100)}%</span>
+            </div>
+          )}
+        </div>
+      )}
     </GlassPanel>
   )
 }

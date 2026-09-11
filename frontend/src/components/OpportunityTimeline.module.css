@@ -109,7 +109,7 @@
 
 .stratRow {
   display: grid;
-  grid-template-columns: 112px 1fr 54px;
+  grid-template-columns: 112px 1fr 58px;
   align-items: center;
   gap: 8px;
 }
@@ -170,11 +170,42 @@
   opacity: 0.7;
 }
 
+/* Right cell in strategy row: stacked delta + uncertainty + downside */
+.stratRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
 .stratDelta {
   font-size: 11px;
   color: var(--color-text-secondary);
   text-align: right;
   white-space: nowrap;
+}
+
+/* Utility std — ±value below the main delta */
+.stratUncertainty {
+  font-size: 8.5px;
+  color: var(--color-text-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Downside probability — shown only when > 0 */
+.stratDownside {
+  font-size: 8.5px;
+  color: var(--color-text-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Std suffix in attack completion footer metric */
+.metricStd {
+  font-size: 10px;
+  color: var(--color-text-muted);
 }
 
 /* ── Footer metrics row ──────────────────────────────────── */
@@ -221,6 +252,6 @@
     display: none;
   }
   .stratRow {
-    grid-template-columns: 90px 1fr 50px;
+    grid-template-columns: 90px 1fr 54px;
   }
 }

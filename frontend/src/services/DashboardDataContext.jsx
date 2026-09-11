@@ -15,6 +15,8 @@ const FALLBACK_BUNDLE = {
   overtakeBonus: mock.overtakeBonus,
   modeProjections: mock.modeProjections,
   nIterations: mock.nIterations,
+  runnerUpMode: mock.runnerUpMode,
+  modeValueGapS: mock.modeValueGapS,
   rivalEstimate: mock.rivalEstimate,
   strategicRival: mock.strategicRival,
   confidenceGatePass: mock.confidenceGatePass,

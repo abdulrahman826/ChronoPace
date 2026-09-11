@@ -77,15 +77,19 @@ export const breachExample = {
 
 // Stage 2 — Monte Carlo Planner (ModeProjection[])
 // overtakeProbability = P(this mode's simulation beats the BALANCED baseline), NOT P(overtake completion)
+// attackCompletionProbability = P(the overtake attempt itself succeeds); null for BALANCED/CONSERVE
 export const modeProjections = [
-  { rank: 1, mode: 'USE_OVERTAKE_BONUS_MODE', laptimeDeltaS: -0.28, stdS: 0.14, sharpe: 2.0, overtakeProbability: 0.71, energyCostMj: 1.5, extra: 'Overtake prob: 71%' },
-  { rank: 2, mode: 'ARM_OVERTAKE_MODE', laptimeDeltaS: -0.20, stdS: 0.18, sharpe: 1.1, overtakeProbability: 0.68, energyCostMj: 1.2, extra: 'Qualify prob: 68%' },
-  { rank: 3, mode: 'PUSH_MODE', laptimeDeltaS: -0.12, stdS: 0.10, sharpe: 1.2, overtakeProbability: 0.55, energyCostMj: 0.9, extra: null },
-  { rank: 4, mode: 'BALANCED_MODE', laptimeDeltaS: 0.0, stdS: 0.06, sharpe: 0.0, overtakeProbability: 0.50, energyCostMj: 0.5, extra: 'baseline' },
-  { rank: 5, mode: 'CONSERVE_MODE', laptimeDeltaS: 0.15, stdS: 0.05, sharpe: -3.0, overtakeProbability: 0.22, energyCostMj: 0.2, extra: null },
+  { rank: 1, mode: 'USE_OVERTAKE_BONUS_MODE', laptimeDeltaS: -0.28, stdS: 0.14, sharpe: 2.0, overtakeProbability: 0.71, attackCompletionProbability: null, energyCostMj: 1.5, extra: 'Overtake prob: 71%' },
+  { rank: 2, mode: 'ARM_OVERTAKE_MODE', laptimeDeltaS: -0.20, stdS: 0.18, sharpe: 1.1, overtakeProbability: 0.68, attackCompletionProbability: null, energyCostMj: 1.2, extra: 'Qualify prob: 68%' },
+  { rank: 3, mode: 'PUSH_MODE', laptimeDeltaS: -0.12, stdS: 0.10, sharpe: 1.2, overtakeProbability: 0.55, attackCompletionProbability: null, energyCostMj: 0.9, extra: null },
+  { rank: 4, mode: 'BALANCED_MODE', laptimeDeltaS: 0.0, stdS: 0.06, sharpe: 0.0, overtakeProbability: 0.50, attackCompletionProbability: null, energyCostMj: 0.5, extra: 'baseline' },
+  { rank: 5, mode: 'CONSERVE_MODE', laptimeDeltaS: 0.15, stdS: 0.05, sharpe: -3.0, overtakeProbability: 0.22, attackCompletionProbability: null, energyCostMj: 0.2, extra: null },
 ]
 
 export const nIterations = 10000
+// Counterfactual companion to the planner's top pick (hardening commit 01817ec)
+export const runnerUpMode = null
+export const modeValueGapS = null
 
 // Rival Energy State Estimator (RivalSocEstimate + observables)
 export const rivalEstimate = {
@@ -183,9 +187,9 @@ export const opportunity = {
   opportunityTrend: null,
   opportunityUncertain: false,
   rankedStrategies: [
-    { name: 'ATTACK_NOW', delayLaps: 0, meanHorizonDeltaS: -0.40, stdHorizonDeltaS: 0.18, ciLowerS: -0.31, strategicValue: 1.40, currentOpportunityValue: 1.40, futureOpportunityValue: 0.0, energyOpportunityCost: 0.05, energySpentMj: 1.5, endSocMj: 5.3 },
-    { name: 'WAIT_2', delayLaps: 2, meanHorizonDeltaS: -0.22, stdHorizonDeltaS: 0.21, ciLowerS: -0.12, strategicValue: 1.16, currentOpportunityValue: 0.90, futureOpportunityValue: 0.26, energyOpportunityCost: 0.08, energySpentMj: 1.2, endSocMj: 5.6 },
-    { name: 'WAIT_5', delayLaps: 5, meanHorizonDeltaS: -0.10, stdHorizonDeltaS: 0.24, ciLowerS: -0.02, strategicValue: 0.87, currentOpportunityValue: 0.60, futureOpportunityValue: 0.27, energyOpportunityCost: 0.10, energySpentMj: 1.0, endSocMj: 5.8 },
-    { name: 'HOLD', delayLaps: 10, meanHorizonDeltaS: 0.05, stdHorizonDeltaS: 0.28, ciLowerS: 0.12, strategicValue: 0.03, currentOpportunityValue: 0.10, futureOpportunityValue: -0.07, energyOpportunityCost: 0.02, energySpentMj: 0.5, endSocMj: 6.3 },
+    { name: 'ATTACK_NOW', delayLaps: 0, meanHorizonDeltaS: -0.40, stdHorizonDeltaS: 0.18, ciLowerS: -0.31, strategicValue: 1.40, currentOpportunityValue: 1.40, futureOpportunityValue: 0.0, energyOpportunityCost: 0.05, energySpentMj: 1.5, endSocMj: 5.3, attackCompletionProbability: null, attackCompletionProbabilityStd: null, utilityStd: null, downsideProbability: null },
+    { name: 'WAIT_2', delayLaps: 2, meanHorizonDeltaS: -0.22, stdHorizonDeltaS: 0.21, ciLowerS: -0.12, strategicValue: 1.16, currentOpportunityValue: 0.90, futureOpportunityValue: 0.26, energyOpportunityCost: 0.08, energySpentMj: 1.2, endSocMj: 5.6, attackCompletionProbability: null, attackCompletionProbabilityStd: null, utilityStd: null, downsideProbability: null },
+    { name: 'WAIT_5', delayLaps: 5, meanHorizonDeltaS: -0.10, stdHorizonDeltaS: 0.24, ciLowerS: -0.02, strategicValue: 0.87, currentOpportunityValue: 0.60, futureOpportunityValue: 0.27, energyOpportunityCost: 0.10, energySpentMj: 1.0, endSocMj: 5.8, attackCompletionProbability: null, attackCompletionProbabilityStd: null, utilityStd: null, downsideProbability: null },
+    { name: 'HOLD', delayLaps: 10, meanHorizonDeltaS: 0.05, stdHorizonDeltaS: 0.28, ciLowerS: 0.12, strategicValue: 0.03, currentOpportunityValue: 0.10, futureOpportunityValue: -0.07, energyOpportunityCost: 0.02, energySpentMj: 0.5, endSocMj: 6.3, attackCompletionProbability: null, attackCompletionProbabilityStd: null, utilityStd: null, downsideProbability: null },
   ],
 }

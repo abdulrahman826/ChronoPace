@@ -106,11 +106,19 @@ export default function OpportunityTimeline() {
                   style={{ width: `${valPct}%` }}
                 />
               </div>
-              <span className={`num ${styles.stratDelta}`}>
-                {s.meanHorizonDeltaS != null
-                  ? `${s.meanHorizonDeltaS > 0 ? '+' : ''}${s.meanHorizonDeltaS.toFixed(2)}s`
-                  : '—'}
-              </span>
+              <div className={styles.stratRight}>
+                <span className={`num ${styles.stratDelta}`}>
+                  {s.meanHorizonDeltaS != null
+                    ? `${s.meanHorizonDeltaS > 0 ? '+' : ''}${s.meanHorizonDeltaS.toFixed(2)}s`
+                    : '—'}
+                </span>
+                {s.utilityStd != null && (
+                  <span className={`num ${styles.stratUncertainty}`}>±{s.utilityStd.toFixed(2)}</span>
+                )}
+                {s.downsideProbability != null && s.downsideProbability > 0 && (
+                  <span className={`num ${styles.stratDownside}`}>{Math.round(s.downsideProbability * 100)}%↓</span>
+                )}
+              </div>
             </div>
           )
         })}
@@ -123,6 +131,20 @@ export default function OpportunityTimeline() {
             <span className={`num ${styles.metricValue}`}>−{opportunity.foregoneValueGapS.toFixed(2)}s</span>
           </div>
         )}
+        {(() => {
+          const recStrategy = opportunity.rankedStrategies?.find((s) => s.name === recommended)
+          return recStrategy?.attackCompletionProbability != null ? (
+            <div className={styles.metricItem}>
+              <span className={styles.metricLabel}>ATTACK COMPLETION</span>
+              <span className={`num ${styles.metricValue}`}>
+                {Math.round(recStrategy.attackCompletionProbability * 100)}%
+                {recStrategy.attackCompletionProbabilityStd != null && (
+                  <span className={styles.metricStd}> ±{Math.round(recStrategy.attackCompletionProbabilityStd * 100)}%</span>
+                )}
+              </span>
+            </div>
+          ) : null
+        })()}
         {opportunity.currentWindowOvertakeProb != null && (
           <div className={styles.metricItem}>
             <span className={styles.metricLabel}>WINDOW OVERTAKE PROB</span>

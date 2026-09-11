@@ -52,6 +52,9 @@ export function adaptDecision(raw) {
     sharpe: m.sharpe_ratio, // LIVE — the backend's own real Sharpe ratio; no more client-side rescale needed
     // LIVE — P(this mode's simulation beats the BALANCED baseline), NOT P(overtake completion)
     overtakeProbability: m.overtake_probability ?? null,
+    // LIVE (hardening commit 01817ec) — P(the simulated overtake attempt itself succeeds).
+    // None/null for CONSERVE and BALANCED (no attempt modelled). Do not display when null.
+    attackCompletionProbability: m.attack_completion_probability ?? null,
     energyCostMj: m.energy_cost_mj ?? null, // LIVE
     extra: `${Math.round(m.overtake_probability * 100)}%`, // kept for backward compat — prefer overtakeProbability
   }))
@@ -104,6 +107,11 @@ export function adaptDecision(raw) {
 
     modeProjections: liveModeProjections.length ? liveModeProjections : mock.modeProjections, // LIVE
     nIterations: monteCarlo.n_iterations ?? mock.nIterations, // LIVE
+    // LIVE (hardening commit 01817ec) — counterfactual companion to the planner's top pick.
+    // runnerUpMode: second-ranked legal mode (null when only one legal mode exists).
+    // modeValueGapS: mean_laptime_delta advantage of recommended over runner-up, in seconds.
+    runnerUpMode: monteCarlo.runner_up_mode ?? null,
+    modeValueGapS: monteCarlo.mode_value_gap_s ?? null,
 
     rivalEstimate: {
       meanSoCMj: rival.mean_reserve_mj ?? mock.rivalEstimate.meanSoCMj, // LIVE — as of the dynamic-strategic-rival backend (2026-09-08), this whole block is already computed against whichever driver `strategicRival.driver` below names, not a fixed focus rival; nothing here needed to change for that, it just started meaning something more specific
@@ -215,6 +223,11 @@ export function adaptDecision(raw) {
             energyOpportunityCost: s.energy_opportunity_cost ?? null,
             energySpentMj: s.energy_spent_mj ?? null,
             endSocMj: s.end_soc_mj ?? null,
+            // LIVE (hardening commit 01817ec) — rival-uncertainty signals per strategy
+            attackCompletionProbability: s.attack_completion_probability ?? null,
+            attackCompletionProbabilityStd: s.attack_completion_probability_std ?? null,
+            utilityStd: s.utility_std ?? null,
+            downsideProbability: s.downside_probability ?? null,
           }))
         : mock.opportunity.rankedStrategies,
     },
