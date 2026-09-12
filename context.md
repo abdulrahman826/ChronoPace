@@ -20,18 +20,28 @@ those two things currently do not match, and that mismatch matters.
 
 **Current reality in one line**: the *decision engine* (the actual
 "intelligence" in this hackathon's theme) — Stages 1-4 as designed in
-this document — has **zero lines of Python in this repository**. As of
-2026-09-03, though, a live backend answering real decision requests
-exists and is reachable (§12, "Backend integration") — it was built and
-is hosted outside this repo, so its source isn't here to read, and
-nothing here confirms it implements Stages 1-4 as specified below; only
-its external contract (what it accepts and returns over HTTP) is known.
-The *dashboard* you can click through locally now consumes that live
-backend when one is configured and reachable, and falls back to
-hand-typed mock data otherwise — it used to be mock-only,
-unconditionally; it no longer is. If code and this file ever disagree,
-trust the code and flag the mismatch rather than trusting whichever is
-more convenient.
+this document — has **zero lines of Python in this repository**. A real
+backend exists and is reachable, but it lives in a **separate repository**
+(`https://github.com/siddiquezain/chronobrain`, local checkout typically
+at `../engine` next to this repo) — never vendored, copied, or merged
+into this one. As of 2026-09-12 that backend is far along and materially
+richer than the original Stages 1-4 spec below: a hardened
+`DecisionSnapshot` contract (confidence/opportunity/Monte Carlo fields
+added 2026-09-06 through 2026-09-11), tick-level strategic-rival tracking,
+multi-race/season discovery, a compound-stratified + ML-hybrid rival
+observation model, and a `POST /api/v1/decision` endpoint that is fully
+live-tested end to end (§12). Nothing here confirms the external backend
+literally implements Stages 1-4's file-by-file design below — only its
+HTTP contract is known and verified — but its *behavior* (legality-first,
+deterministic, uncertainty-aware, no client-side strategy logic) is
+consistent with this document's intent throughout. The *dashboard* you
+can click through locally consumes that live backend when one is
+configured and reachable, and falls back to hand-typed mock data
+otherwise — both paths render through the same components. If code and
+this file ever disagree, trust the code and flag the mismatch rather than
+trusting whichever is more convenient. **§12 is a full rewrite as of
+2026-09-12** — read it before assuming anything about the current
+dashboard from an older skim of this file.
 
 ## 1. What this project is
 
@@ -690,19 +700,336 @@ more hand-typed JS objects would repeat the exact problem this document's
 opening section warns about (a mock that looks like intelligence but
 isn't).
 
-## 12. Dashboard UI (`frontend/`) — built, now backend-connected with a mock fallback
+## 12. Dashboard UI (`frontend/`) — built, live-verified against the current hardened backend (rewritten 2026-09-12)
+
+**This entire section was rewritten from scratch on 2026-09-12** after a
+live audit against the running backend (chronobrain repo, commit
+`01817ec`) — every claim below was checked against actual source code and
+a real, running `POST /api/v1/decision` response, not carried over from
+an older pass. Anything from an earlier version of this section that
+isn't repeated here should be treated as superseded.
 
 Unlike Stages 1-4 as designed in this document, this part genuinely
 exists on disk and runs. It started as a **visual prototype of what
-ChronoPace looks like once a backend is real** — every panel, layout,
-and interaction was designed to match the data shapes above exactly —
-and as of 2026-09-03 it's no longer just a prototype: it fetches from a
-real, live backend ("Backend integration", below) when one is configured
+ChronoPace looks like once a backend is real**, and is now a fully wired
+integration: it fetches from a real, live backend when one is configured
 and reachable, and falls back to the original hand-typed mock data
 otherwise. Both modes render through the exact same components; nothing
 on screen looks structurally different depending on which one is active,
 except the handful of fields the live backend has no equivalent for
-(also covered below).
+(§12.7, below).
+
+### 12.1 CURRENT LIVE ARCHITECTURE
+
+```
+ChronoPace Engine (separate repo: github.com/siddiquezain/chronobrain,
+                    local checkout ../engine — NEVER copied into this repo)
+        ↓  uvicorn app.main:app --reload --port 8000
+POST /api/v1/decision                              (also GET /api/v1/replay/... for historical)
+        ↓  raw JSON — DecisionSnapshot
+frontend/src/services/api.js                       (fetchDecision, fetchReplay*, thin fetch wrapper)
+        ↓
+frontend/src/services/adaptDecision.js              (pure reshape — no computation, no strategy logic)
+        ↓
+frontend/src/services/DashboardDataContext.jsx      (fetch-once, live/fallback provider, useDashboardData())
+        ↓
+UI components (DecisionBanner, RivalEstimator, MonteCarloPlanner,
+                OpportunityTimeline, ComplianceProbe, EnergyStatus,
+                FooterStrip, HistoricalReplayControl, StrategicRivalTimeline)
+```
+
+The two repositories communicate **only** over this HTTP boundary. The
+frontend contains no backend Python code, no duplicated strategy math,
+and no parallel decision logic — verified by repeated `grep` sweeps
+(`Math.random`, mode-assignment conditionals, confidence-threshold
+overrides, rival/Monte Carlo recomputation — all absent from `src/`).
+
+### 12.2 CURRENT API
+
+**Canonical endpoint**: `POST /api/v1/decision`. This is the *only*
+strategy-data source the dashboard uses — legacy paths the backend still
+exposes (`/api/race/*`, `/api/energy/*`, `/api/overtake/*`,
+`/api/strategy/*`, `/api/simulation/*`) are **not called anywhere** in
+`src/` (verified by grep). Request body, matching the live
+`/openapi.json`'s `DecisionRequest` schema exactly:
+
+```json
+{
+  "source": "synthetic",
+  "scenario": "B",
+  "seed": 42,
+  "total_laps": 50,
+  "lap": 25,
+  "with_narrative": true
+}
+```
+
+`source` is `'synthetic'` or `'fastf1'`; `scenario` is `A`-`E` (§11);
+`overrides` (`InputOverrides`) and `fastf1` (`FastF1Spec`) exist on the
+schema but are not sent by the dashboard's default synthetic path — only
+`HistoricalReplayControl`'s replay calls use the FastF1-facing routes
+(§12.8). All fields are optional server-side; the values above are what
+`DashboardDataContext.jsx`'s `SYNTHETIC_PARAMS` actually sends.
+
+**Discovery/replay endpoints** (all under `/api/v1/replay/`, §12.8):
+`GET /seasons`, `GET /races?season=`, `GET /sessions?season=&race=`,
+`GET /historical/{race}/{lap}?full_snapshot=true[&driver&rival&seed&season&event&session]`,
+`GET /historical/{race}/{lap}/timeline`.
+
+### 12.3 CURRENT FRONTEND COMPONENTS
+
+**Stack**: React 19 + Vite. `@react-three/fiber` + `@react-three/drei` +
+`three` for the 3D car viewport. Plain CSS Modules (no Tailwind/UI kit).
+No routing, no state management library; local `useState`/`useRef` plus
+one context (`DashboardDataContext`).
+
+**Layout** (`App.jsx`): `Header` (wordmark + session/lap/car/LIVE-or-REPLAY
+cluster + `HistoricalReplayControl` toggle) → a 3-column main row → a
+2-item support row → `FooterStrip`.
+- **Left column**: `DecisionBanner` → `RivalEstimator`.
+- **Center column**: `RacingScene` (the car hero, presentation-only, no
+  data) → `MonteCarloPlanner`.
+- **Right column**: `CircuitMapPlaceholder` (honest, unimplemented — no
+  fake track data) → `OpportunityTimeline`.
+- **Support row**: `EnergyStatus` — `ComplianceProbe` (`compact`).
+
+| Component | Backend source | Current state, verified live 2026-09-12 |
+|---|---|---|
+| `DecisionBanner` | `decision` + `confidence` blocks | Mode via `MODE_LABELS` (unchanged 5-mode map, §4), a `PLANNER` row when the gate overrides the planner's Stage-2 pick, an `ACTION` row (`decision.action`, e.g. `ATTACK_NOW`), a decision-confidence %, the "WHY" reasons text, and 5 gate pills — **RELIABILITY, SIGNIFICANCE, DRIVER LOAD, RIVAL CONF., DATA QUALITY** (a 5th pill, `dataQuality`/`confidence.data_quality_passed`, added with the hardening contract — not 4 anymore). All from real `ConfidenceBlock`/`DecisionBlock` fields; CI-bound/DCLI/t-stat/rival-σ stats grid is fully live. |
+| `RivalEstimator` | `rival` block | **Redesigned 2026-09-11** as "RIVAL ENERGY STATE" (was "RIVAL ENERGY ESTIMATOR") — see §12.9 for the honesty rules this redesign enforces. Shows `ESTIMATED ENERGY` (mean) and `±uncertainty` (std) as two visually distinct values (never summed), an `OBSERVATIONS` count, a `STATE BELIEF` L/M/H% distribution (falls back to a bucket label only when `distribution` is absent), an honest mean±std *range bar* (not a fabricated Gaussian curve — deliberately, see the component's own header comment), a `CONFIDENCE GATE` PASSED/FAILED pill reading `confidence.rival_confidence_passed` directly (never a client threshold), `EVIDENCE QUALITY` and `P(DEFEND)`, and — only in historical replay when the tick-level selector actually ran — a "N changes this lap" readout with a `StrategicRivalTimeline` toggle. `clipping_point`/`terminal_speed_kmh` have no field anywhere on the current contract and are **not rendered** anywhere in this component (confirmed by grep — no such field is read). |
+| `MonteCarloPlanner` | `monte_carlo` block | 5-mode ranked table, columns **MODE / VS BALANCED / Δ LAP / ENERGY** (an `ENERGY` cost column was added with the hardening pass). "Planner Preference" (renamed from "Best Strategy" to clarify it's the planner's pick, which the confidence gate may still override) / Expected Gain / Risk summary row. A counterfactual row — **RUNNER-UP / VALUE GAP / ATTACK COMPLETION** — reads `monte_carlo.runner_up_mode`, `.mode_value_gap_s`, and the top mode's `attack_completion_probability`; shown only when all three are non-null. `overtakeProbability` (labelled "VS BALANCED" throughout, correctly — it is P(mode beats the BALANCED baseline), not P(overtake completion)) drives the bar directly, no client regex/rescale. |
+| `OpportunityTimeline` | `opportunity` block | No longer a placeholder or a fabricated 3-node bonus view — a real "HORIZON STRATEGY RANKING" table from `opportunity.ranked_strategies` (`ATTACK_NOW`/`WAIT_N`/`HOLD`, §9's naming), each row showing horizon delta ± std and, when non-null, a downside-probability subscript (`N%↓`) and an attack-completion probability. Footer shows `FOREGONE VS {runner-up strategy}`, the recommended strategy's attack-completion probability ± std, and the current window's overtake probability — all guarded against null, nothing fabricated when the backend omits a field (e.g. `HOLD`'s downside probability is correctly absent, not zero-filled). |
+| `ComplianceProbe` | `compliance` block | Real `compliance.checks[]` (rule/provenance/status/detail) rendered as PASS/BREACH/INFO rows — a new `info` status (MGU-K power ceiling: "no modelled peak") renders as a distinct badge, not forced into pass/fail. |
+| `EnergyStatus` | `energy` block | Deployable SoC, lap-deploy MJ, MGU-K peak, and an `energy_is_modeled`-driven title (`CHRONOPACE ENERGY STATE` vs `CHRONOPACE MODELED ENERGY STATE`) so the UI never implies a modeled number was measured. |
+| `HistoricalReplayControl` | `/api/v1/replay/*` | Season → Grand Prix → Session discovery (§12.8) plus the original curated-race replay flow; both paths feed the same dashboard. |
+| `StrategicRivalTimeline` | `/replay/historical/{race}/{lap}/timeline` | Tick-cadence (~4 Hz real FastF1 sample rate) strategic-rival change visualization, fetched and cached only on request (never bulk-fetched), §12.8. |
+| `FooterStrip` | `meta.data_mode` | `DATA MODE: LIVE BACKEND · SYNTHETIC`, `... · HISTORICAL REPLAY · REAL TELEMETRY`, or the mock string — never a fixed `128 Hz` data-rate claim (removed, §12.9). |
+| `RacingScene`, `CircuitMapPlaceholder`, `GlassPanel`/`Icons` | — | Unchanged — presentation-only, no backend equivalent, not touched by any integration pass. |
+
+### 12.4 CURRENT DATA FLOW
+
+Exactly the diagram in §12.1. One `useDashboardData()` hook; every
+component reads through it, never `mockTelemetry.js` directly (the one
+exception, `MODE_LABELS`/`ROLE_LABELS`, is a display-text lookup, not
+data). `DashboardDataContext.jsx` fetches once per page load (synthetic
+path) and additionally owns the `historical` state slice
+(season/race/session discovery, lap replay, tick-timeline cache) used by
+`HistoricalReplayControl` and `RivalEstimator`'s timeline toggle.
+
+### 12.5 FIVE DEPLOYMENT MODES — unchanged, still five
+
+`CONSERVE_MODE`, `BALANCED_MODE`, `ARM_OVERTAKE_MODE`,
+`USE_OVERTAKE_BONUS_MODE`, `PUSH_MODE` — see §4 for the full backend
+semantics; `MODE_LABELS` (`mockTelemetry.js`) is still the only
+presentation-layer relabeling, unchanged, and `ARM_OVERTAKE_MODE` is
+never collapsed into `USE_OVERTAKE_BONUS_MODE` anywhere in the UI —
+verified live 2026-09-12: a single `/api/v1/decision` call's
+`monte_carlo.ranked_modes` renders all 5 as distinct rows.
+
+### 12.6 BACKEND → FRONTEND FIELD MAPPING — current, verified live 2026-09-12
+
+The authoritative, line-by-line version of this table lives as inline
+comments in `adaptDecision.js` — read that file before touching the
+mapping. Summary, confirmed against a real running response (not assumed
+from a spec):
+
+| Dashboard field(s) | Backend field(s) | Status |
+|---|---|---|
+| Mode, action, decision confidence, stage2 mode, override reason | `decision.*` | **Live** |
+| CI lower bound, t-statistic, DCLI score, all 5 gate booleans (incl. `dataQuality`) | `confidence.*` | **Live** — was 4 static gates before 2026-09-06, now all 5 real |
+| Rival mean/std, n_observations, bucket, distribution (L/M/H), confidence, p_defend, evidence_quality, posterior_health, baseline_ready | `rival.*` | **Live** |
+| Strategic rival identity (driver/role/position/gap/ahead/relevance) | `rival.driver`/`.role`/`.strategic_*`/`.relevance_score` | **Live** — always `null` on synthetic responses (no full field to pick an opponent from), populated on historical/FastF1 replay |
+| Monte Carlo 5-mode table, runner-up mode, value gap, attack-completion probability, energy cost per mode | `monte_carlo.*` | **Live** — `runner_up_mode`/`mode_value_gap_s`/`attack_completion_probability`/`energy_cost_mj` added by the 2026-09-11 hardening pass |
+| Opportunity ranked strategies, foregone strategy/value gap, window overtake probability, attack-completion probability ± std, utility std, downside probability | `opportunity.*` | **Live** — the last four per-strategy fields added by the same hardening pass; `null`-guarded, never fabricated when absent |
+| Compliance checks (rule/provenance/status/detail, incl. `info` status) | `compliance.checks[]` | **Live** |
+| Energy: SoC, lap-deployed/recovered MJ, MGU-K peak, `energy_is_modeled` | `energy.*` | **Live** |
+| `carNumber` | — | **Static (mock)** — no driver/car field on `SnapshotMeta` |
+| `terminalSpeedKmh`, `clippingPointFraction` | — | **No live field exists; not rendered anywhere** (not just static-fallback — the current `RivalEstimator` doesn't read these fields at all) |
+| Compliance rows' discrete value/limit/unit numbers, breach example | — | **Static (mock)** shape kept as ComplianceProbe's fallback; the real, live checks (`liveComplianceChecks`) are what's actually shown when connected |
+| Track/weather/tyre footer strip, `dataRateHz` | — | **Static (mock)** / **suppressed** — the backend reports no per-decision telemetry cadence; a fixed `128 Hz` claim was fabrication and was removed |
+| Confidence-gate override demo scenario (2nd state of "Demo: toggle") | — | **Static (mock)**, always — no live "override" scenario exists from a single decision call |
+
+### 12.7 MOCK FALLBACK
+
+`mockTelemetry.js` is unchanged in spirit: still the fallback shape and
+still what renders when no backend is configured or reachable. Verified
+live: an unset `VITE_API_URL`, a network failure, a non-2xx response, or
+a timeout on the **synthetic** path all land in `DashboardDataContext`'s
+catch block, which logs and renders the mock bundle with zero crash — the
+dashboard never silently shows fabricated *historical* data instead
+(§12.8's "no hindsight" rule is separate and stricter: a failed
+historical/replay fetch sets `historical.error` and leaves the *main*
+dashboard state untouched, it does not fall back to mock). `FooterStrip`'s
+`DATA MODE` string is what tells you which of the three states
+(mock / live synthetic / historical replay) is currently on screen —
+always check it before trusting a screenshot.
+
+### 12.8 Historical Race Replay & multi-race discovery (unchanged since 2026-09-09, still accurate)
+
+`HistoricalReplayControl.jsx` — a judge-facing control in `Header`'s side
+slot. Two ways to pick a race:
+- **Featured/curated** — `GET /api/v1/replay/races` (no `season`), a
+  small registry with sensible driver/rival defaults.
+- **Browse other races (2019–2025)** — `GET /seasons` → `GET
+  /races?season=` → `GET /sessions?season=&race=`, the live FastF1
+  schedule, dynamically discovered, never a hardcoded list. Verified live
+  2026-09-12: selecting season 2024 populates all 24 real 2024 rounds
+  from the backend.
+
+Either path calls `GET /api/v1/replay/historical/{race}/{lap}?full_snapshot=true[...]`
+per lap (fired only on RUN REPLAY or one auto-play tick) and reads
+`adaptDecision(raw.snapshot)` — `raw.snapshot` is byte-shape-identical to
+`/api/v1/decision`'s own response, so the same adapter/components render
+it, no historical-specific rendering path exists.
+
+- **No hindsight**: only `race`/`lap`/`driver`/`rival`/`seed`/`season`/
+  `event`/`session` are ever sent — never telemetry, never a future lap's
+  data. Causal censoring is entirely the backend's responsibility.
+- **Provenance labels**: "REAL TELEMETRY FastF1 · {race}" next to
+  "MODELED Rival Energy · Opportunity · Monte Carlo · ChronoPace
+  Decision" — never implies the historical car ran under 2026
+  regulations. `Header`'s LIVE/REPLAY badge switches to amber "REPLAY"
+  during historical mode (verified live 2026-09-12), green "LIVE"
+  otherwise.
+- **Failure is honest**: a failed historical fetch sets `historical.error`
+  and shows "HISTORICAL REPLAY UNAVAILABLE" + the real error text — the
+  main dashboard state is left untouched, never silently mocked.
+- **Tick-level strategic-rival timeline** (`GET
+  /replay/historical/{race}/{lap}/timeline`, `StrategicRivalTimeline.jsx`):
+  only fetched on demand ("Show timeline"), cached by
+  race+lap+driver+rival+season+event+session so it's never re-fetched for
+  an already-seen key, and only offered when `rival.tick_level` (surfaced
+  via `raw.summary.strategic_rival`, not the compact `rival` block) is
+  true for that lap.
+
+### 12.9 Honesty rules this UI enforces (binding, checked live 2026-09-12)
+
+- Never sum a mean and its uncertainty and present it as "available
+  energy" (`4.5 + 2.6 = 7.1`) — `RivalEstimator` shows `ESTIMATED ENERGY`
+  and `±uncertainty` as two separate, clearly labeled numbers, and the
+  range bar visualizes them as a *band*, not an addition. Verified: no
+  component anywhere computes `mean + std` and displays it as a total.
+- Never draw a probability density curve from mean/std alone (a
+  Gaussian shape implies more knowledge than two numbers support) — the
+  old `PosteriorPlot` Gaussian-curve component was replaced by an honest
+  range bar (§12.3).
+- Never claim a fixed telemetry sample rate the backend doesn't report —
+  the old fixed `128 Hz` footer claim is gone; `dataRateHz` is `null` and
+  the row is suppressed rather than shown as a guess.
+- Never show a rival-confidence PASS/FAIL by a client-side threshold on
+  `rival.confidence` — always the backend's own
+  `confidence.rival_confidence_passed` boolean.
+- Never fabricate a field the backend doesn't currently expose
+  (`clipping_point`, `terminal_speed_kmh`) — don't display it, and don't
+  invent a placeholder value for it.
+
+### 12.10 CURRENT LIMITATIONS
+
+- **No frontend control to switch synthetic scenario A-E.** `DashboardDataContext`'s
+  synthetic path hardcodes `scenario: 'B'` (§12.2); scenarios A/C/D/E are
+  reachable today only via a direct API call (§12.13), not from the UI.
+  The "Demo: toggle" button on `DecisionBanner` flips between a canned
+  pass-case and a canned override-case — it does not call the backend
+  with a different scenario. Adding a scenario picker is a real,
+  reasonable next step, not yet built.
+- **No Circuit Map** — `CircuitMapPlaceholder` is an honest empty
+  placeholder, unchanged since the 2026-09-02 layout redesign.
+  `opportunity.ranked_strategies`/`rival.strategic_*` fields already
+  exist server-side and are unused by this component.
+  Opportunity Horizon visualization now exists (§12.3's `OpportunityTimeline`
+  row) but Circuit Map itself is still purely a placeholder.
+- **No frontend build reproduction of Stages 1-4** — this repo still has
+  zero backend Python; the pipeline behind the API is entirely external
+  (§0/top of file).
+- **`PosteriorPlot`-era n=0 edge case** — a pre-existing, unrelated,
+  not-yet-fixed console error (`<path> attribute d: Expected number,
+  "M0.0,NaN..."`) can appear on a lap where mean/std SoC are both `0.0
+  MJ` (e.g. historical replay lap 1 with `n_observations=0`). Cosmetic
+  only — the rest of the dashboard renders correctly around it. Flagged,
+  not fixed, out of scope for an integration pass.
+- **Cloudflare quick-tunnel URLs are ephemeral** — `frontend/.env.local`'s
+  `VITE_API_URL` may point at a `trycloudflare.com` host that rotates or
+  dies when the tunnel process restarts; treat `VITE_API_URL` as the
+  stable configuration point, not any specific tunnel hostname.
+
+### 12.11 HOW TO RUN BACKEND
+
+Separate repo — from that repo's own root (e.g. `../engine` relative to
+this one, **never** inside `frontend/`):
+
+```bash
+python -m venv .venv && . .venv/Scripts/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Verify it's up: `curl http://localhost:8000/api/v1/health` → `200`.
+Inside this Claude Code project, `.claude/launch.json`'s
+`chronopace-backend` entry runs the equivalent command against the
+checked-out engine repo path.
+
+### 12.12 HOW TO RUN FRONTEND
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+(or the `chronopace-frontend` entry in `.claude/launch.json` — port 5173,
+auto-falls-back if taken). Set `VITE_API_URL` in `frontend/.env.local`
+and/or `frontend/.env.development.local` (the latter wins for `npm run
+dev` per Vite's env-file precedence, restart required after changing
+either — Vite only reads env files at server start). `frontend/.env.example`
+documents the variable with no real value; never commit a real tunnel URL
+or `.env.local`/`.env.development.local` themselves (both gitignored via
+`*.local`).
+
+### 12.13 HOW TO TEST LIVE API
+
+```bash
+curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/openapi.json | less        # authoritative live contract — never assume an old one
+curl -X POST http://localhost:8000/api/v1/decision \
+  -H "Content-Type: application/json" \
+  -d '{"source":"synthetic","scenario":"B","seed":42,"total_laps":50,"lap":25,"with_narrative":true}'
+```
+
+Determinism check: send the identical body 2-3 times and diff `decision`/
+`rival`/`monte_carlo`/`confidence`/`compliance`/`reason_codes` — verified
+byte-identical live 2026-09-12. Scenario check: swap `"scenario"` across
+`A`-`E` and compare `decision.mode` (verified live: A→BALANCED, B→USE_
+OVERTAKE_BONUS, C→CONSERVE, D→PUSH, E→BALANCED, at lap 25/seed 42) — the
+backend's `/api/v1/demo/presets` + `/api/v1/demo/preset/{key}` endpoints
+also expose named scenario pairs built specifically to demonstrate §11's
+core differentiation (same opportunity, different own-energy override →
+different mode).
+
+### 12.14 DEMO SCENARIOS — what's real right now
+
+**IMPLEMENTED, verified live 2026-09-12**: the core "same opportunity,
+different energy state → different decision" demonstration (§11) is real
+and reproducible today via the backend's own built-in presets — no
+frontend scenario picker needed to prove it, just two direct API calls:
+- `POST /api/v1/demo/preset/HIGH_ENERGY_STRONG_OPPORTUNITY` → `USE_
+  OVERTAKE_BONUS_MODE` (SoC 6.4 MJ).
+- `POST /api/v1/demo/preset/LIMITED_ENERGY_SAME_OPPORTUNITY` → `CONSERVE_
+  MODE` (same scenario/lap/seed, SoC overridden to 0.8 MJ).
+
+Also implemented and demonstrated live: all 5 modes rendering distinctly
+in one Monte Carlo table (§12.5); the confidence gate genuinely
+overriding to `BALANCED_MODE`/`HOLD` on degraded data quality (seen live
+on a historical-replay lap 1 with `n_observations=0`); the Opportunity
+Horizon's `ATTACK_NOW` vs `WAIT_2`/`WAIT_5`/`HOLD` ranking with
+genuinely widening uncertainty at greater delay (§9); the tick-level
+strategic-rival timeline on a real FastF1 lap.
+
+**PLANNED, not yet built**: a frontend UI control to pick scenario A-E or
+a named preset directly (currently API-only, §12.10); a real Circuit Map.
+
+**PLACEHOLDER, explicitly not real data**: `CircuitMapPlaceholder`'s
+"Track Overview" box; the confidence-gate override demo's second toggle
+state (canned, not a live call, §12.6's last row); `mockTelemetry.js`'s
+entire bundle when no backend is reachable (clearly marked via
+`FooterStrip`'s `DATA MODE`, never presented as live).
 
 **Stack**: React 19 + Vite. `@react-three/fiber` + `@react-three/drei` +
 `three` for the 3D car viewport. Plain CSS Modules (no Tailwind/UI kit) —
@@ -1102,27 +1429,33 @@ requirements.txt                     numpy, pydantic, pytest, scipy (all pinned)
 --- frontend — actually built ---
 frontend/
   .env.local                        VITE_API_URL — gitignored, machine-local, points at the live backend (§12)
+  .env.development.local            VITE_API_URL — gitignored, wins over .env.local for `npm run dev` only (§12.12)
+  .env.example                      VITE_API_URL= with no value — the only env file actually committed (§12.12)
   src/
     App.jsx, App.module.css          Top-level layout — 3-zone main row + support row (§12)
     components/
-      Header.jsx/.module.css
+      Header.jsx/.module.css          incl. the LIVE/REPLAY badge (§12.8)
       FooterStrip.jsx/.module.css
-      DecisionBanner.jsx/.module.css
+      DecisionBanner.jsx/.module.css  incl. the 5th DATA QUALITY gate pill (§12.3)
       ComplianceProbe.jsx/.module.css
-      MonteCarloPlanner.jsx/.module.css
-      RivalEstimator.jsx/.module.css, PosteriorPlot.jsx
+      MonteCarloPlanner.jsx/.module.css   incl. runner-up/value-gap/attack-completion row (§12.3)
+      RivalEstimator.jsx/.module.css   redesigned 2026-09-11, "RIVAL ENERGY STATE" (§12.3/12.9) —
+                                          PosteriorPlot.jsx retired, replaced by an inline RangeBar
       CircuitMapPlaceholder.jsx/.module.css
-      OpportunityTimeline.jsx/.module.css
+      OpportunityTimeline.jsx/.module.css   real ranked_strategies horizon table (§12.3)
+      StrategicRivalTimeline.jsx/.module.css   tick-cadence rival-change visualization, on-demand + cached (§12.8)
       RacingScene/                    Car.jsx, Overlay.jsx, RacingScene.jsx/.module.css, sceneConfig.js
       GlassPanel.jsx/.module.css, Icons.jsx
-      HistoricalReplayControl.jsx/.module.css   Judge-facing FastF1 replay panel, added 2026-09-07 (§12)
-    services/                        Backend integration, added 2026-09-03 (§12)
+      HistoricalReplayControl.jsx/.module.css   judge-facing FastF1 replay panel + season/race/session
+                                                   discovery ("Browse other races") (§12.8)
+    services/                        Backend integration (§12)
       api.js                           fetch wrapper — POSTs VITE_API_URL + /api/v1/decision, plus
-                                          fetchReplayRaces()/fetchHistoricalLap() for historical replay (§12)
-      adaptDecision.js                 reshapes the real response into mockTelemetry.js's exact shape;
-                                          reused as-is for historical replay (same DecisionSnapshot shape)
+                                          fetchReplaySeasons/Races/Sessions, fetchHistoricalLap,
+                                          fetchHistoricalLapTimeline (§12.2/12.8)
+      adaptDecision.js                 reshapes the real response into mockTelemetry.js's exact shape —
+                                          pure reshape, no computation (§12.6's authoritative comments)
       DashboardDataContext.jsx         fetch-once-per-load + live/fallback provider, useDashboardData();
-                                          also owns the `historical` replay state/actions (§12)
+                                          also owns the `historical` discovery/replay state/actions (§12)
     data/mockTelemetry.js            Shape reference AND the fallback data source — no longer the only one (§12)
     index.css, main.jsx
   public/models/vf26.glb             3D car asset (Haas VF-26)
@@ -1130,7 +1463,10 @@ frontend/
 ```
 
 Backend files live at the repository root, no `src/` layout, once they
-exist — §17 has the build order.
+exist — §17 has the build order. (The *real, external* backend's own
+repo layout — `app/decision/`, `app/replay/`, `app/ml/`, etc. — is not
+this repo's concern and is not reproduced here; see §12.11 for how to
+run it, not how it's laid out.)
 
 ## 16. What actually exists right now — summary
 
@@ -1142,18 +1478,15 @@ those exist yet (§14).
 
 | Component | Status |
 |---|---|
-| Architecture, data contracts, regulatory constants | Fully specified in this document |
-| Telemetry Simulator (`telemetry_simulator.py`) | Designed, not implemented — first thing to build (§17) |
-| Stage 1 — Regulatory Gate | Designed, not implemented |
-| Rival Energy State Estimator (4 observables) | Designed, not implemented |
-| Stage 2 — Monte Carlo Planner | Designed, not implemented |
-| Stage 3 — Confidence Gate | Designed, not implemented |
-| Opportunity Horizon (`opportunity_engine.py`) | Designed, not implemented — builds on Stages 2-3 |
-| Stage 4 — LLM Narrator, input contract (§10) | Not started (by design — waits on Stage 3) |
-| Dashboard UI | **Built and running**, now backend-connected with a mock fallback (§12, 2026-09-03) — still does **not** yet reflect the 4-observable rival estimator, the Opportunity Horizon layer, or the three Core Demo Scenarios (§11); that UI work hasn't started |
-| Backend ↔ frontend bridge | **Built, on the frontend side** (§12) — `services/api.js` / `adaptDecision.js` / `DashboardDataContext.jsx`, fetching a real, reachable backend. That backend's source isn't in this repo and isn't confirmed to be the Stages 1-4 pipeline specified above — see §12's "Backend integration" for exactly what is and isn't known |
-| Historical Race Replay control | **Built and verified against real FastF1 telemetry** (§12, 2026-09-07) — `HistoricalReplayControl.jsx` + the same backend-bridge files, driving the existing dashboard from `GET /api/v1/replay/{races,historical/...}` instead of synthetic data. Requires `fastf1` installed on the backend's own Python environment (a separate repo, not this one) — the UI shows an honest "HISTORICAL REPLAY UNAVAILABLE" rather than mock data when it isn't |
-| Real telemetry source | **Resolved**: `telemetry_simulator.py` (synthetic, deterministic) for the hackathon build; FastF1/real data is a later calibration layer, not a dependency (§14) |
+| Architecture, data contracts, regulatory constants | Fully specified in this document (this repo has no Python implementing them — see next row) |
+| Telemetry Simulator / Stage 1-4 / Opportunity Horizon, **as files in this repo** | Designed, not implemented in this repository — zero backend Python here (§0). The *external* backend (separate repo) implements a materially richer, differently-organized system that achieves the same product intent — see §12.1's architecture diagram and the "current reality" note at the top of this file |
+| Dashboard UI | **Built, running, and live-verified end-to-end against the current hardened backend contract** (§12, rewritten 2026-09-12) — all 9 dashboard sections (decision, energy, rival, Monte Carlo, compliance, opportunity, confidence, reasons, data-mode) confirmed showing real backend values field-for-field, not mock, in a live browser session |
+| Backend ↔ frontend bridge | **Built and current** (§12) — `services/api.js` / `adaptDecision.js` / `DashboardDataContext.jsx`, fetching a real, reachable, separate-repo backend over `POST /api/v1/decision` exclusively (no legacy endpoint usage anywhere in `src/`, verified by grep) |
+| Historical Race Replay + multi-race/season discovery | **Built and verified against real FastF1 telemetry** (§12.8) — `HistoricalReplayControl.jsx` + `StrategicRivalTimeline.jsx`, driving the dashboard from `GET /api/v1/replay/{seasons,races,sessions,historical/...}`. Requires `fastf1` on the backend's Python environment (separate repo) — shows an honest "HISTORICAL REPLAY UNAVAILABLE" rather than mock data when it isn't reachable |
+| Rival Energy State card | **Redesigned 2026-09-11** (§12.3/12.9) — honest mean±std range bar (not a fabricated density curve), L/M/H distribution, evidence quality, P(defend), backend-driven confidence-gate pass/fail |
+| Monte Carlo / Opportunity hardening fields (runner-up mode, value gap, attack-completion probability, utility std, downside probability) | **Threaded through 2026-09-11/12** (§12.3/12.6) — all null-guarded, never fabricated when the backend omits one |
+| Client-side strategy logic | **Confirmed absent** — repeated `grep` sweeps across `frontend/src` for mode-assignment conditionals, confidence thresholds, rival/Monte Carlo recomputation, and `Math.random` all return nothing (§12.1) |
+| Real telemetry source | **Resolved**: `telemetry_simulator.py` (synthetic, deterministic) for the hackathon build *as specified in this repo*; the external backend additionally runs real FastF1 telemetry for historical replay, not merely planned (§14/§12.8) |
 
 ## 17. Immediate next task
 
