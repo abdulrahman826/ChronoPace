@@ -44,6 +44,7 @@ export function adaptDecision(raw) {
   const opportunity = raw.opportunity || {}
   const contextAttribution = raw.context_attribution || null
   const counterfactual = raw.counterfactual || null
+  const rivalIntent = raw.rival_intent || null
 
   const rankedModes = Array.isArray(monteCarlo.ranked_modes) ? monteCarlo.ranked_modes : []
   const liveModeProjections = rankedModes.map((m, i) => ({
@@ -246,6 +247,12 @@ export function adaptDecision(raw) {
       contextExplainedNote: contextAttribution.context_explained_note ?? null,
       activeAeroMode: contextAttribution.active_aero_mode ?? null, // OVERTAKE_ELIGIBLE | STRAIGHT_MODE | CORNER_MODE | UNKNOWN
       residualEvidenceConfidence: contextAttribution.residual_evidence_confidence ?? null,
+      // LIVE (chronopace-demo-ready, 2026-09-12) — real {tyre, energy,
+      // traffic_aero, other} proportions summing to 1.0, MODEL_ASSUMPTION
+      // per the backend's own field description. `null` until this lap's
+      // snapshot includes it (older backend builds, or a lap where the
+      // engine didn't compute one) — never synthesized client-side.
+      causeAttribution: contextAttribution.cause_attribution ?? null,
     },
 
     // LIVE (chronopace-demo-ready branch) — CounterfactualBlock: what the
@@ -261,6 +268,20 @@ export function adaptDecision(raw) {
       energyCostCounterfactualMj: counterfactual.energy_cost_counterfactual_mj ?? null,
       futureOpportunityImpact: counterfactual.future_opportunity_impact ?? null,
       summary: counterfactual.summary ?? null,
+    },
+
+    // LIVE (chronopace-demo-ready, 2026-09-12) — RivalIntentBlock: real
+    // intent/response-capability/trap-probability classification, derived
+    // server-side from the SoC posterior + p_defend + performance trends.
+    // `null` until a snapshot includes it — renders as an honest
+    // "UNAVAILABLE" state in the component, same as before this block
+    // existed, never a client-side guess.
+    rivalIntent: rivalIntent && {
+      intent: rivalIntent.intent ?? null, // DEPLOYING | CONSERVING | HARVESTING | DEFENDING | UNCERTAIN
+      intentConfidence: rivalIntent.intent_confidence ?? null,
+      responseCapability: rivalIntent.response_capability ?? null, // CAN_COUNTER | CANNOT_COUNTER | UNCERTAIN
+      trapProbability: rivalIntent.trap_probability ?? null,
+      intentEvidence: rivalIntent.intent_evidence ?? null,
     },
 
     // LIVE — the engine's own real reasoning trace (stage/detail strings, as

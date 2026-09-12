@@ -68,6 +68,43 @@
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
+.attrBars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.attrRow {
+  display: grid;
+  grid-template-columns: 52px 1fr 26px;
+  align-items: center;
+  gap: 5px;
+}
+.attrKey {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.attrTrack {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.attrFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-text-secondary);
+}
+.attrPct {
+  font-size: 9px;
+  color: var(--color-text-primary);
+  text-align: right;
+}
+
 .ctxLine {
   display: flex;
   justify-content: space-between;

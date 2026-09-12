@@ -24,6 +24,7 @@ const FALLBACK_BUNDLE = {
   opportunity: mock.opportunity,
   contextAttribution: mock.contextAttribution,
   counterfactual: mock.counterfactual,
+  rivalIntent: mock.rivalIntent,
   trace: mock.trace,
   actions: mock.actions,
 }

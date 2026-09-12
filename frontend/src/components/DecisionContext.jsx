@@ -46,12 +46,31 @@ export default function DecisionContext() {
                   <span className={styles.confBadge}>{ctx.residualEvidenceConfidence}</span>
                 )}
               </div>
-              <div className={styles.ctxLine}>
-                <span className={styles.ctxKey}>Tyre context</span>
-                <span className={`num ${styles.ctxVal}`}>
-                  {ctx.rivalTyreCompound ?? 'UNAVAILABLE'}{ctx.compoundBaselineActive === false ? ' (pooled)' : ''}
-                </span>
-              </div>
+              {/* Real {tyre, energy, traffic_aero, other} proportions from
+                  the backend (chronopace-demo-ready) when present — an
+                  honest estimated split, never a client-computed one. Falls
+                  back to the single tyre-compound/sector-delta line when a
+                  snapshot doesn't include cause_attribution yet. */}
+              {ctx.causeAttribution ? (
+                <div className={styles.attrBars}>
+                  {Object.entries(ctx.causeAttribution).map(([key, frac]) => (
+                    <div key={key} className={styles.attrRow}>
+                      <span className={styles.attrKey}>{key.replace('_', '/').toUpperCase()}</span>
+                      <div className={styles.attrTrack}>
+                        <div className={styles.attrFill} style={{ width: `${Math.round(frac * 100)}%` }} />
+                      </div>
+                      <span className={`num ${styles.attrPct}`}>{Math.round(frac * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.ctxLine}>
+                  <span className={styles.ctxKey}>Tyre context</span>
+                  <span className={`num ${styles.ctxVal}`}>
+                    {ctx.rivalTyreCompound ?? 'UNAVAILABLE'}{ctx.compoundBaselineActive === false ? ' (pooled)' : ''}
+                  </span>
+                </div>
+              )}
               <div className={styles.ctxLine}>
                 <span className={styles.ctxKey}>Observed sector Δ</span>
                 <span className={`num ${styles.ctxVal}`}>

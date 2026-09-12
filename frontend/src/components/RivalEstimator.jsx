@@ -66,15 +66,29 @@ function RangeBar({ mean, std, socMax }) {
 /** Left column, bottom slot — ChronoPace's probabilistic belief about the
  * rival's hidden energy state, inferred from observable performance behaviour.
  * Nothing here is directly measured — see the footer disclaimer and context.md §6. */
+const INTENT_LABELS = {
+  DEPLOYING: 'DEPLOYING',
+  CONSERVING: 'CONSERVING',
+  HARVESTING: 'HARVESTING',
+  DEFENDING: 'DEFENDING',
+  UNCERTAIN: 'UNCERTAIN',
+}
+const RESPONSE_LABELS = {
+  CAN_COUNTER: 'CAN COUNTER',
+  CANNOT_COUNTER: 'CANNOT COUNTER',
+  UNCERTAIN: 'UNCERTAIN',
+}
+
 export default function RivalEstimator() {
-  const { rivalEstimate, strategicRival, historical, loadStrategicRivalTimeline, confidenceGatePass } = useDashboardData()
+  const { rivalEstimate, strategicRival, historical, loadStrategicRivalTimeline, confidenceGatePass, rivalIntent } = useDashboardData()
   const { meanSoCMj, stdSoCMj, socMaxMj, nObservations, attackTendency, distribution, confidence, evidenceQuality, pDefend } = rivalEstimate
-  // RESPONSE CAPABILITY is a direct arithmetic complement of the backend's
-  // own p_defend field (P(counter) = p_defend, P(cannot counter) = 1 -
-  // p_defend) — a display split of one real number, not a new estimate.
-  // INTENT (deploying/conserving/harvesting/defending/uncertain) and TRAP
-  // RISK have no backend field at all as of the chronopace-demo-ready
-  // contract — shown as an honest "UNAVAILABLE" state rather than invented.
+  // INTENT / RESPONSE CAPABILITY / TRAP RISK come from the backend's own
+  // RivalIntentBlock (chronopace-demo-ready, 2026-09-12) — a real
+  // classification derived server-side from the SoC posterior, p_defend,
+  // and performance trends, never computed here. `rivalIntent` is `null`
+  // whenever the backend snapshot doesn't include the block (older
+  // contract, or a lap the engine didn't compute one for) — renders an
+  // honest "UNAVAILABLE" state in that case, never a guess.
   const inferenceGatePassed = confidenceGatePass.gates.rivalConfidence
   const [timelineOpen, setTimelineOpen] = useState(false)
 
@@ -211,18 +225,31 @@ export default function RivalEstimator() {
         </div>
       </div>
 
-      {/* ── Intent / Response capability / Trap risk — INTENT and TRAP RISK
-           have no backend field yet; shown honestly as UNAVAILABLE rather
-           than guessed. RESPONSE CAPABILITY is p_defend and its complement,
-           both real. ── */}
+      {/* ── Intent / Response capability / Trap risk — all three now real
+           backend fields (RivalIntentBlock). Falls back to an honest
+           UNAVAILABLE only when the block itself is absent. ── */}
       <div className={styles.metaRow3}>
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>INTENT</span>
-          <span className={`num ${styles.metaValueMuted}`}>UNAVAILABLE</span>
+          {rivalIntent ? (
+            <span className={`num ${styles.metaValue}`} title={rivalIntent.intentEvidence || ''}>
+              {INTENT_LABELS[rivalIntent.intent] ?? rivalIntent.intent}
+              {rivalIntent.intentConfidence != null && (
+                <span className={styles.gateConfidence}> · {Math.round(rivalIntent.intentConfidence * 100)}%</span>
+              )}
+            </span>
+          ) : (
+            <span className={`num ${styles.metaValueMuted}`}>UNAVAILABLE</span>
+          )}
         </div>
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>RESPONSE CAPABILITY</span>
-          {pDefend != null ? (
+          {rivalIntent?.responseCapability ? (
+            <span className={`num ${styles.metaValue}`}>{RESPONSE_LABELS[rivalIntent.responseCapability] ?? rivalIntent.responseCapability}</span>
+          ) : pDefend != null ? (
+            // Fallback while a snapshot has p_defend but no RivalIntentBlock
+            // yet: the arithmetic complement of the real p_defend field —
+            // a display split of one real number, not a new estimate.
             <span className={styles.responseSplit}>
               <span className={`num ${styles.responseCan}`}>CAN {Math.round(pDefend * 100)}%</span>
               <span className={`num ${styles.responseCannot}`}>CANNOT {Math.round((1 - pDefend) * 100)}%</span>
@@ -233,7 +260,11 @@ export default function RivalEstimator() {
         </div>
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>TRAP RISK</span>
-          <span className={`num ${styles.metaValueMuted}`}>UNAVAILABLE</span>
+          {rivalIntent?.trapProbability != null ? (
+            <span className={`num ${styles.metaValue}`}>{Math.round(rivalIntent.trapProbability * 100)}%</span>
+          ) : (
+            <span className={`num ${styles.metaValueMuted}`}>UNAVAILABLE</span>
+          )}
         </div>
       </div>
 

@@ -204,6 +204,10 @@ export const contextAttribution = null
 // CounterfactualBlock — same reasoning as above.
 export const counterfactual = null
 
+// RivalIntentBlock — no live equivalent in mock/fallback mode; `null` so
+// the component renders its own honest "unavailable" state.
+export const rivalIntent = null
+
 // Reasoning trace — empty in fallback mode; DecisionTrace hides itself
 // rather than inventing stage/detail text.
 export const trace = []
