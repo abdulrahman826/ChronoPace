@@ -306,6 +306,36 @@
 .gateWarning {
   color: var(--color-amber);
 }
+
+/* Intent / Response capability / Trap risk — one row, 3 columns */
+.metaRow3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  column-gap: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.metaValueMuted {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+.responseSplit {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.responseCan {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.responseCannot {
+  font-size: 9px;
+  color: var(--color-text-muted);
+}
 .evidenceInputs {
   font-family: var(--font-mono);
   font-size: 9.5px;
@@ -400,6 +430,10 @@
     padding-top: 3px;
     row-gap: 3px;
   }
+  .metaRow3 {
+    margin-top: 3px;
+    padding-top: 3px;
+  }
   .evidenceInputs {
     line-height: 1.3;
   }
@@ -445,6 +479,10 @@
     margin-top: 2px;
     padding-top: 2px;
     row-gap: 2px;
+  }
+  .metaRow3 {
+    margin-top: 2px;
+    padding-top: 2px;
   }
   .metaValue {
     font-size: 10.5px;

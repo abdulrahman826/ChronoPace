@@ -108,6 +108,25 @@ export function PipelineIcon(props) {
   )
 }
 
+export function CompassIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15 9l-2 6-6 2 2-6z" />
+    </svg>
+  )
+}
+
+export function FlaskIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 3h6" />
+      <path d="M10 3v6l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3" />
+      <path d="M8 15h8" />
+    </svg>
+  )
+}
+
 export function FlagIcon(props) {
   return (
     <svg {...base} {...props}>

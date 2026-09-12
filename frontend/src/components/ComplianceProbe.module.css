@@ -67,6 +67,57 @@
   margin-top: -2px;
 }
 
+.feasibilityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.feasibilityPipeline {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feasibilityCount {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rejectedList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rejectedRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 9.5px;
+}
+.rejectedAction {
+  color: var(--color-amber);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rejectedReason {
+  color: var(--color-text-muted);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .breachExampleWrap {
   margin-top: 2px;
   padding-top: 6px;

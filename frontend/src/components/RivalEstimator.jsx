@@ -69,6 +69,12 @@ function RangeBar({ mean, std, socMax }) {
 export default function RivalEstimator() {
   const { rivalEstimate, strategicRival, historical, loadStrategicRivalTimeline, confidenceGatePass } = useDashboardData()
   const { meanSoCMj, stdSoCMj, socMaxMj, nObservations, attackTendency, distribution, confidence, evidenceQuality, pDefend } = rivalEstimate
+  // RESPONSE CAPABILITY is a direct arithmetic complement of the backend's
+  // own p_defend field (P(counter) = p_defend, P(cannot counter) = 1 -
+  // p_defend) — a display split of one real number, not a new estimate.
+  // INTENT (deploying/conserving/harvesting/defending/uncertain) and TRAP
+  // RISK have no backend field at all as of the chronopace-demo-ready
+  // contract — shown as an honest "UNAVAILABLE" state rather than invented.
   const inferenceGatePassed = confidenceGatePass.gates.rivalConfidence
   const [timelineOpen, setTimelineOpen] = useState(false)
 
@@ -96,7 +102,7 @@ export default function RivalEstimator() {
         <div className={styles.headerLeft}>
           <div className="panelHeaderRow">
             <RadarIcon width={18} height={18} />
-            <h3>RIVAL ENERGY STATE</h3>
+            <h3>RIVAL INTELLIGENCE</h3>
           </div>
           <div className={styles.subtitle}>BAYESIAN POSTERIOR · PARTICLE FILTER</div>
         </div>
@@ -202,6 +208,32 @@ export default function RivalEstimator() {
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>P(DEFEND)</span>
           <span className={`num ${styles.metaValue}`}>{pDefend != null ? `${Math.round(pDefend * 100)}%` : '—'}</span>
+        </div>
+      </div>
+
+      {/* ── Intent / Response capability / Trap risk — INTENT and TRAP RISK
+           have no backend field yet; shown honestly as UNAVAILABLE rather
+           than guessed. RESPONSE CAPABILITY is p_defend and its complement,
+           both real. ── */}
+      <div className={styles.metaRow3}>
+        <div className={styles.metaItem}>
+          <span className={styles.fieldLabel}>INTENT</span>
+          <span className={`num ${styles.metaValueMuted}`}>UNAVAILABLE</span>
+        </div>
+        <div className={styles.metaItem}>
+          <span className={styles.fieldLabel}>RESPONSE CAPABILITY</span>
+          {pDefend != null ? (
+            <span className={styles.responseSplit}>
+              <span className={`num ${styles.responseCan}`}>CAN {Math.round(pDefend * 100)}%</span>
+              <span className={`num ${styles.responseCannot}`}>CANNOT {Math.round((1 - pDefend) * 100)}%</span>
+            </span>
+          ) : (
+            <span className={`num ${styles.metaValueMuted}`}>—</span>
+          )}
+        </div>
+        <div className={styles.metaItem}>
+          <span className={styles.fieldLabel}>TRAP RISK</span>
+          <span className={`num ${styles.metaValueMuted}`}>UNAVAILABLE</span>
         </div>
       </div>
 

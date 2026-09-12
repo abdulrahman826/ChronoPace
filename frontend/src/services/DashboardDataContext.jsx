@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import {
   fetchDecision, fetchReplayRaces, fetchReplaySeasons, fetchReplaySessions,
-  fetchHistoricalLap, fetchHistoricalLapTimeline, isApiConfigured,
+  fetchHistoricalLap, fetchHistoricalLapTimeline, fetchValidationSummary, isApiConfigured,
 } from './api'
 import { adaptDecision } from './adaptDecision'
 import * as mock from '../data/mockTelemetry'
@@ -22,6 +22,17 @@ const FALLBACK_BUNDLE = {
   confidenceGatePass: mock.confidenceGatePass,
   confidenceGateOverride: mock.confidenceGateOverride,
   opportunity: mock.opportunity,
+  contextAttribution: mock.contextAttribution,
+  counterfactual: mock.counterfactual,
+  trace: mock.trace,
+  actions: mock.actions,
+}
+
+const INITIAL_VALIDATION = {
+  loaded: false,
+  loading: false,
+  error: null,
+  data: null, // ValidationSummary, raw camelCase-untouched — see ValidationLab.jsx
 }
 
 const SYNTHETIC_PARAMS = {
@@ -120,6 +131,10 @@ export function DashboardDataProvider({ children }) {
     error: null,
   })
   const [historical, setHistorical] = useState(INITIAL_HISTORICAL)
+  // 'dashboard' | 'validation' — a lightweight view switch, not a router
+  // (this project deliberately has no routing dependency, context.md §12.3).
+  const [view, setView] = useState('dashboard')
+  const [validation, setValidation] = useState(INITIAL_VALIDATION)
   // Bumped on every runHistoricalReplay call, checked when each one's fetch
   // resolves — a response only gets applied if it's still the most recent
   // request in flight. Without this, a slow response to an earlier lap could
@@ -402,9 +417,44 @@ export function DashboardDataProvider({ children }) {
     })
   }, [loadSynthetic])
 
+  // GET /api/v1/validation/summary — controlled hidden-state metrics, fetched
+  // lazily the first time the Validation Lab view is opened (never bundled
+  // into the live-decision fetch above; these are two entirely separate
+  // concerns per the backend's own route separation).
+  const loadValidation = useCallback(async () => {
+    if (!isApiConfigured()) {
+      setValidation({ loaded: false, loading: false, error: 'VITE_API_URL is not configured', data: null })
+      return
+    }
+    setValidation((v) => ({ ...v, loading: true, error: null }))
+    try {
+      const data = await fetchValidationSummary(SYNTHETIC_PARAMS.scenario
+        ? { scenario: SYNTHETIC_PARAMS.scenario, seed: SYNTHETIC_PARAMS.seed, totalLaps: SYNTHETIC_PARAMS.total_laps }
+        : {})
+      setValidation({ loaded: true, loading: false, error: null, data })
+    } catch (err) {
+      setValidation((v) => ({ ...v, loading: false, error: err.message }))
+    }
+  }, [])
+
+  const openValidationLab = useCallback(() => {
+    setView('validation')
+    setValidation((v) => {
+      if (!v.loaded && !v.loading) loadValidation()
+      return v
+    })
+  }, [loadValidation])
+
+  const closeValidationLab = useCallback(() => setView('dashboard'), [])
+
   const value = {
     ...state,
     historical,
+    view,
+    validation,
+    openValidationLab,
+    closeValidationLab,
+    loadValidation,
     loadHistoricalRaces,
     setHistoricalLap,
     runHistoricalReplay,

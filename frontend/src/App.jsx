@@ -7,8 +7,10 @@ import CircuitMapPlaceholder from './components/CircuitMapPlaceholder'
 import EnergyStatus from './components/EnergyStatus'
 import ComplianceProbe from './components/ComplianceProbe'
 import OpportunityTimeline from './components/OpportunityTimeline'
+import DecisionContext from './components/DecisionContext'
+import ValidationLab from './components/ValidationLab'
 import FooterStrip from './components/FooterStrip'
-import { DashboardDataProvider } from './services/DashboardDataContext'
+import { DashboardDataProvider, useDashboardData } from './services/DashboardDataContext'
 import styles from './App.module.css'
 
 /** Three-zone command-room composition: LEFT = why + what (decision chain),
@@ -28,6 +30,17 @@ export default function App() {
 }
 
 function AppShell() {
+  const { view } = useDashboardData()
+
+  if (view === 'validation') {
+    return (
+      <div className={styles.shell}>
+        <Header />
+        <ValidationLab />
+      </div>
+    )
+  }
+
   return (
     <div className={styles.shell}>
       <Header />
@@ -55,6 +68,7 @@ function AppShell() {
         <div className={styles.supportRow}>
           <EnergyStatus />
           <ComplianceProbe compact />
+          <DecisionContext />
         </div>
       </div>
 

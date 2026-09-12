@@ -73,22 +73,27 @@
   min-height: 0;
 }
 
-/* --- Supporting telemetry: demoted on purpose, one slim strip ---
-   Height measured against real rendered content (4 compliance rows +
-   header), not guessed — see the two components' own CSS for how they
-   use it. Bumped 168->178: EnergyStatus's LAP DEPLOY row and
-   ComplianceProbe's 4th (info-status) row pushed both a few px past the
-   old measurement, which GlassPanel's overflow:hidden was silently
-   clipping. */
+/* --- Supporting telemetry + explanation: demoted on purpose, one slim
+   strip --- Height measured against real rendered content (4 compliance
+   rows + header, or DecisionContext's 3 mini-sections), not guessed — see
+   the three components' own CSS for how they use it. Bumped 178->204 when
+   DecisionContext (Context Attribution / Counterfactual / Reasoning Trace)
+   was added as a 3rd column — its 3-mini-section layout needs a little more
+   height than the original 2-column strip did. */
 .supportRow {
   flex-shrink: 0;
-  height: 178px;
+  height: 204px;
   display: flex;
   gap: 16px;
 }
 .supportRow > * {
   flex: 1;
   min-width: 0;
+}
+/* DecisionContext gets a larger share — 3 internal columns need more width
+   than the other two panels' single-column content does. */
+.supportRow > *:last-child {
+  flex: 1.4;
 }
 
 @media (max-width: 1700px) {
@@ -125,6 +130,9 @@
   }
   .leftColumn {
     gap: 6px;
+  }
+  .supportRow {
+    height: 202px;
   }
 }
 

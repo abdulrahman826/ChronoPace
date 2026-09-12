@@ -193,3 +193,27 @@ export const opportunity = {
     { name: 'HOLD', delayLaps: 10, meanHorizonDeltaS: 0.05, stdHorizonDeltaS: 0.28, ciLowerS: 0.12, strategicValue: 0.03, currentOpportunityValue: 0.10, futureOpportunityValue: -0.07, energyOpportunityCost: 0.02, energySpentMj: 0.5, endSocMj: 6.3, attackCompletionProbability: null, attackCompletionProbabilityStd: null, utilityStd: null, downsideProbability: null },
   ],
 }
+
+// ContextAttributionBlock — no live equivalent in mock/fallback mode (this
+// block didn't exist before the chronopace-demo-ready backend); `null`
+// throughout so the component renders its own honest "unavailable" state
+// rather than a fabricated split, exactly as it would for a real backend
+// response that omitted this block.
+export const contextAttribution = null
+
+// CounterfactualBlock — same reasoning as above.
+export const counterfactual = null
+
+// Reasoning trace — empty in fallback mode; DecisionTrace hides itself
+// rather than inventing stage/detail text.
+export const trace = []
+
+// Regulatory feasibility — mirrors the fixed demo mode's own 5 modes as
+// "candidate", all "feasible" (the mock demo never illustrates a rejection),
+// nothing rejected. Real content when connected; a plausible static
+// placeholder here, not a claim about any specific real scenario.
+export const actions = {
+  candidate: ['ATTACK_NOW', 'WAIT_2_LAPS', 'WAIT_5_LAPS', 'CONSERVE', 'HOLD'],
+  feasible: ['ATTACK_NOW', 'WAIT_2_LAPS', 'WAIT_5_LAPS', 'CONSERVE', 'HOLD'],
+  rejected: [],
+}

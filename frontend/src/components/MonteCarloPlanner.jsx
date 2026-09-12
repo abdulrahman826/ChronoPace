@@ -31,8 +31,8 @@ export default function MonteCarloPlanner() {
       <div className="panelHeaderRow">
         <GaugeIcon width={16} height={16} />
         <h3>MONTE CARLO PLANNER</h3>
-        <span className={styles.subtitle}>
-          <span className="num">{nIterations.toLocaleString()}</span> simulations/mode
+        <span className={styles.subtitle} title="Simulated outcome probability — not model accuracy">
+          <span className="num">{nIterations.toLocaleString()}</span> STOCHASTIC ROLLOUTS/MODE
         </span>
       </div>
 

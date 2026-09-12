@@ -154,3 +154,25 @@ export async function fetchHistoricalLapTimeline(
     { signal },
   )
 }
+
+/**
+ * GET /api/v1/validation/summary?scenario=&seed=&total_laps= — controlled
+ * hidden-state validation metrics, entirely separate from the live decision
+ * path (confirmed live on the chronopace-demo-ready branch, 2026-09-12).
+ * Response: `{scenario, seed, total_laps, generated_at, ground_truth_available,
+ * rival_soc: {mae_mj, rmse_mj, median_ae_mj, p90_ae_mj, sample_count,
+ * evaluation_note, honesty_notice, ...}, rival_classification: {accuracy,
+ * per_class_f1, confusion_matrix, sample_count, ...}, overtake_calibration,
+ * decision_accuracy}`. The last two currently come back as
+ * `NotImplementedMetric` (`{implemented:false, ground_truth_available:false,
+ * note}`) — the backend's own honest "not yet benchmarked" state, not
+ * something this frontend should paper over with an invented number.
+ */
+export async function fetchValidationSummary({ scenario, seed, totalLaps, signal } = {}) {
+  const params = new URLSearchParams()
+  if (scenario) params.set('scenario', scenario)
+  if (seed != null) params.set('seed', String(seed))
+  if (totalLaps != null) params.set('total_laps', String(totalLaps))
+  const qs = params.toString()
+  return getJson(`/api/v1/validation/summary${qs ? `?${qs}` : ''}`, { signal })
+}

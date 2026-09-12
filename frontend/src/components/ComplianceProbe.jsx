@@ -35,7 +35,7 @@ function CheckRow({ rule, value, limit, unit, detail, status }) {
  *   only from what this particular rendering shows.
  */
 export default function ComplianceProbe({ className, compact = false }) {
-  const { complianceChecks, liveComplianceChecks, overtakeBonus, breachExample } = useDashboardData()
+  const { complianceChecks, liveComplianceChecks, overtakeBonus, breachExample, actions } = useDashboardData()
   // Real live checks when connected (richer and differently-shaped than
   // the mock's 3 fixed rows — see adaptDecision.js), the mock list
   // otherwise. Never a silent mix of the two. The live list also includes
@@ -73,6 +73,31 @@ export default function ComplianceProbe({ className, compact = false }) {
         {!compact && (
           <div className={styles.bankedNote}>
             Banked from Lap {overtakeBonus.bankedFromLap} — usable this lap only
+          </div>
+        )}
+
+        {/* Regulatory feasibility runs BEFORE simulation — candidates the
+            gate rejects never reach Monte Carlo at all. Real feasible/
+            rejected_alternatives from the backend; the pipeline note is a
+            fixed label, not derived data. Only shows a rejected row when
+            the backend actually rejected something — most scenarios reject
+            nothing, so this usually stays a single thin line. */}
+        {actions && actions.candidate.length > 0 && (
+          <div className={styles.feasibilityRow}>
+            <span className={styles.feasibilityPipeline}>CANDIDATES → FEASIBILITY → SIMULATION</span>
+            <span className={styles.feasibilityCount}>
+              {actions.feasible.length}/{actions.candidate.length} FEASIBLE
+            </span>
+          </div>
+        )}
+        {actions && actions.rejected.length > 0 && (
+          <div className={styles.rejectedList}>
+            {actions.rejected.map((r) => (
+              <div key={r.action} className={styles.rejectedRow}>
+                <span className={styles.rejectedAction}>{r.action.replace(/_/g, ' ')}</span>
+                <span className={styles.rejectedReason}>{r.reason}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>

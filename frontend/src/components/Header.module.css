@@ -11,6 +11,39 @@
   min-width: 0;
 }
 
+.sideRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.labToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.labToggle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+.labToggleActive {
+  color: var(--color-accent-bright);
+  border-color: var(--color-border-strong);
+  background: rgba(255, 46, 68, 0.08);
+}
+
 .center {
   text-align: center;
 }

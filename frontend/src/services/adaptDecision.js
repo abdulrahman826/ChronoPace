@@ -42,6 +42,8 @@ export function adaptDecision(raw) {
   const compliance = raw.compliance || {}
   const confidence = raw.confidence || {}
   const opportunity = raw.opportunity || {}
+  const contextAttribution = raw.context_attribution || null
+  const counterfactual = raw.counterfactual || null
 
   const rankedModes = Array.isArray(monteCarlo.ranked_modes) ? monteCarlo.ranked_modes : []
   const liveModeProjections = rankedModes.map((m, i) => ({
@@ -230,6 +232,52 @@ export function adaptDecision(raw) {
             downsideProbability: s.downside_probability ?? null,
           }))
         : mock.opportunity.rankedStrategies,
+    },
+
+    // LIVE (chronopace-demo-ready branch, 2026-09-12) — ContextAttributionBlock.
+    // This is NOT a numeric percentage breakdown (tyre/energy/traffic/other %)
+    // — the backend doesn't compute or expose one. Pure pass-through of the
+    // real fields it does expose; `null` fields render as an honest
+    // "unavailable" state in the component, never a fabricated split.
+    contextAttribution: contextAttribution && {
+      rivalTyreCompound: contextAttribution.rival_tyre_compound ?? null,
+      compoundBaselineActive: contextAttribution.compound_baseline_active ?? null,
+      observedSectorDeltaS: contextAttribution.observed_sector_delta_s ?? null,
+      contextExplainedNote: contextAttribution.context_explained_note ?? null,
+      activeAeroMode: contextAttribution.active_aero_mode ?? null, // OVERTAKE_ELIGIBLE | STRAIGHT_MODE | CORNER_MODE | UNKNOWN
+      residualEvidenceConfidence: contextAttribution.residual_evidence_confidence ?? null,
+    },
+
+    // LIVE (chronopace-demo-ready branch) — CounterfactualBlock: what the
+    // "what if we'd chosen the runner-up instead" comparison actually cost/
+    // gained, straight from the backend's own simulation, never recomputed.
+    counterfactual: counterfactual && {
+      recommendedAction: counterfactual.recommended_action ?? null,
+      counterfactualAction: counterfactual.counterfactual_action ?? null,
+      recommendedExpectedGainS: counterfactual.recommended_expected_gain_s ?? null,
+      counterfactualExpectedGainS: counterfactual.counterfactual_expected_gain_s ?? null,
+      gainDeltaS: counterfactual.gain_delta_s ?? null,
+      energyCostRecommendedMj: counterfactual.energy_cost_recommended_mj ?? null,
+      energyCostCounterfactualMj: counterfactual.energy_cost_counterfactual_mj ?? null,
+      futureOpportunityImpact: counterfactual.future_opportunity_impact ?? null,
+      summary: counterfactual.summary ?? null,
+    },
+
+    // LIVE — the engine's own real reasoning trace (stage/detail strings, as
+    // written server-side). Displayed as-is, in order — never remapped to
+    // invented stage names like "OBSERVE/UNDERSTAND/INFER".
+    trace: Array.isArray(raw.trace) ? raw.trace.map((t) => ({ stage: t.stage, detail: t.detail })) : [],
+
+    // LIVE — regulatory feasibility, ahead of and separate from the Monte
+    // Carlo ranking above (§11's "never optimise an action you cannot
+    // execute" — feasibility is computed before simulation, not derived from
+    // it here).
+    actions: {
+      candidate: Array.isArray(raw.candidate_actions) ? raw.candidate_actions : [],
+      feasible: Array.isArray(raw.feasible_actions) ? raw.feasible_actions : [],
+      rejected: Array.isArray(raw.rejected_alternatives)
+        ? raw.rejected_alternatives.map((r) => ({ action: r.action, reason: r.reason }))
+        : [],
     },
   }
 }
