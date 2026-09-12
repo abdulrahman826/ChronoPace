@@ -23,9 +23,12 @@ function rolePillClass(role) {
  */
 function RangeBar({ mean, std, socMax }) {
   const W = 300
-  const H = 40
+  // Was 40 — trimmed to 30 (aspect ratio only, purely visual) to reclaim
+  // vertical room in RivalEstimator's tightest height tiers; every other
+  // coordinate below is derived from H so the drawing stays proportional.
+  const H = 30
   const padX = 18
-  const trackY = 18
+  const trackY = H / 2 + 3
   const trackW = W - padX * 2
   const clamp = (v) => Math.max(0, Math.min(1, v / socMax))
   const toX = (mj) => padX + clamp(mj) * trackW
@@ -44,13 +47,13 @@ function RangeBar({ mean, std, socMax }) {
       {/* Base track */}
       <line x1={padX} y1={trackY} x2={W - padX} y2={trackY} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
       {/* End ticks */}
-      <line x1={padX} y1={trackY - 5} x2={padX} y2={trackY + 5} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-      <line x1={W - padX} y1={trackY - 5} x2={W - padX} y2={trackY + 5} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+      <line x1={padX} y1={trackY - 4} x2={padX} y2={trackY + 4} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+      <line x1={W - padX} y1={trackY - 4} x2={W - padX} y2={trackY + 4} stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
       {/* Uncertainty band */}
-      <rect x={x0} y={trackY - 7} width={Math.max(0, x1 - x0)} height={14} fill="rgba(200,190,186,0.13)" rx="2" />
-      <rect x={x0} y={trackY - 7} width={Math.max(0, x1 - x0)} height={14} fill="none" stroke="rgba(200,190,186,0.18)" strokeWidth="0.5" rx="2" />
+      <rect x={x0} y={trackY - 5.5} width={Math.max(0, x1 - x0)} height={11} fill="rgba(200,190,186,0.13)" rx="2" />
+      <rect x={x0} y={trackY - 5.5} width={Math.max(0, x1 - x0)} height={11} fill="none" stroke="rgba(200,190,186,0.18)" strokeWidth="0.5" rx="2" />
       {/* Mean marker */}
-      <line x1={mx} y1={trackY - 9} x2={mx} y2={trackY + 9} stroke="rgba(245,240,238,0.82)" strokeWidth="1.5" />
+      <line x1={mx} y1={trackY - 7} x2={mx} y2={trackY + 7} stroke="rgba(245,240,238,0.82)" strokeWidth="1.5" />
       {/* Axis labels */}
       <text x={padX} y={H - 1} fontSize="8" fill="rgba(107,91,88,0.85)" fontFamily="var(--font-mono)" textAnchor="middle">0</text>
       <text x={W - padX} y={H - 1} fontSize="8" fill="rgba(107,91,88,0.85)" fontFamily="var(--font-mono)" textAnchor="end">{socMax.toFixed(0)} MJ</text>
@@ -102,6 +105,16 @@ export default function RivalEstimator() {
           <span className={`${styles.inferenceDot} ${inferenceGatePassed ? styles.inferenceDotPass : styles.inferenceDotWarn}`} />
         </div>
       </div>
+
+      {/* Everything below the header in one scrollable region — at the
+          tightest supported viewport heights this card's content can still
+          exceed the space the 3-column layout leaves it even after
+          tightening every margin/font available; scrolling just this body
+          (never the header, never the whole page) is the documented
+          last-resort per the layout brief, not a workaround for the cases
+          above where tightening alone was enough (it already is, at
+          1440x900 and 1920x1080 — this only ever engages below that). */}
+      <div className={styles.body}>
 
       {/* ── Strategic rival identity (conditional — null in synthetic mode) ── */}
       {hasStrategicRival && (
@@ -166,7 +179,10 @@ export default function RivalEstimator() {
         <RangeBar mean={meanSoCMj} std={stdSoCMj} socMax={socMaxMj} />
       </div>
 
-      {/* ── Confidence gate + observable inputs ── */}
+      {/* ── Confidence gate / observable inputs / evidence quality / P(defend) —
+           one 2x2 block (was two stacked rows, each with its own border+
+           margin) so the section reads as one "gate + evidence" group
+           without the duplicated seam. Same four values, same order. ── */}
       <div className={styles.metaRow}>
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>CONFIDENCE GATE</span>
@@ -179,10 +195,6 @@ export default function RivalEstimator() {
           <span className={styles.fieldLabel}>OBSERVABLE INPUTS</span>
           <span className={styles.evidenceInputs}>Speed · Accel · Sector · Terminal</span>
         </div>
-      </div>
-
-      {/* ── Evidence quality + P(defend) ── */}
-      <div className={styles.metaRow}>
         <div className={styles.metaItem}>
           <span className={styles.fieldLabel}>EVIDENCE QUALITY</span>
           <span className={`num ${styles.metaValue}`}>{evidenceQuality ? evidenceQuality.toUpperCase() : '—'}</span>
@@ -215,6 +227,7 @@ export default function RivalEstimator() {
       {/* ── Footer disclaimer ── */}
       <div className={styles.footer}>MODELED · NOT MEASURED</div>
 
+      </div>
     </GlassPanel>
   )
 }

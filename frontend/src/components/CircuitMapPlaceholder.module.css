@@ -1,5 +1,9 @@
 .wrap {
-  flex: 1.2;
+  /* Was 1.2 — a static placeholder needs less room than OpportunityTimeline's
+     now-richer ranked-strategy content (see OpportunityTimeline.module.css's
+     .wrap for the matching 1.35). Purely a flex-share rebalance; this
+     component's own content/behavior is unchanged. */
+  flex: 0.85;
   min-height: 0;
 }
 

@@ -8,6 +8,12 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Every panel owns its bounding box — content that grows beyond it must
+     never visually escape onto a sibling panel. This is the one place that
+     guarantee is enforced; components with a genuinely elastic list (e.g.
+     OpportunityTimeline's strategy rows) opt that one region into its own
+     overflow-y: auto instead of relying on this hard clip. */
+  overflow: hidden;
 }
 
 .elevated {

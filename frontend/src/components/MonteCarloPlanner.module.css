@@ -1,7 +1,13 @@
 .wrap {
   min-width: 0;
-  gap: 10px;
-  padding: 16px 20px;
+  /* Tightened from 10px — this panel gained a full extra row (the
+     counterfactual block) with the Monte Carlo hardening pass; it's a
+     naturally-sized (non-flex) sibling of the car viewport in
+     .centerColumn, so its own growth was silently eating the car area's
+     height. Reclaiming a few px here restores that balance without
+     touching App.module.css's column split. */
+  gap: 8px;
+  padding: 14px 20px;
 }
 
 .subtitle {
@@ -30,7 +36,7 @@
 .bars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .row {
@@ -96,8 +102,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-top: 2px;
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 .summaryItem {
@@ -125,9 +130,10 @@
 .counterfactual {
   display: flex;
   gap: 14px;
-  padding-top: 8px;
+  padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .cfItem {
   display: flex;

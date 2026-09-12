@@ -1,6 +1,13 @@
 .wrap {
-  flex: 1;
+  /* Bumped from 1 — this panel's content grew (per-strategy uncertainty/
+     downside subscripts, a 3-metric footer row) with the Opportunity
+     Horizon hardening pass; CircuitMapPlaceholder gave back the matching
+     share (see its own .wrap). Tighter gap than GlassPanel's base 12px —
+     this panel now has more distinct blocks (subtitle, table, footer,
+     note) than that base rhythm was tuned for. */
+  flex: 1.35;
   min-height: 0;
+  gap: 8px;
 }
 
 .subtitle {
@@ -102,9 +109,15 @@
 .strategyTable {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
   flex: 1;
   min-height: 0;
+  /* The one genuinely elastic list in this panel: at the tightest viewport
+     heights the 4 rows' natural height can still exceed what's left after
+     the header/footer/note — scroll this region alone rather than letting
+     it clip (GlassPanel's own overflow:hidden) or spill onto the footer
+     metrics below it (the pre-fix behavior). Header and footer stay put. */
+  overflow-y: auto;
 }
 
 .stratRow {
@@ -112,6 +125,7 @@
   grid-template-columns: 112px 1fr 58px;
   align-items: center;
   gap: 8px;
+  min-height: 26px;
 }
 .stratRowRec {
   /* No extra glow — a subtle distinction only */
@@ -213,9 +227,10 @@
 .footMetrics {
   display: flex;
   gap: 16px;
-  padding-top: 8px;
+  padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .metricItem {

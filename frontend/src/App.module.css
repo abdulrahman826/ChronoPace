@@ -75,11 +75,14 @@
 
 /* --- Supporting telemetry: demoted on purpose, one slim strip ---
    Height measured against real rendered content (4 compliance rows +
-   header comes to ~150px), not guessed — see the two components' own
-   CSS for how they use it. */
+   header), not guessed — see the two components' own CSS for how they
+   use it. Bumped 168->178: EnergyStatus's LAP DEPLOY row and
+   ComplianceProbe's 4th (info-status) row pushed both a few px past the
+   old measurement, which GlassPanel's overflow:hidden was silently
+   clipping. */
 .supportRow {
   flex-shrink: 0;
-  height: 168px;
+  height: 178px;
   display: flex;
   gap: 16px;
 }
